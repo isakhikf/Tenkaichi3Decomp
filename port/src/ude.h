@@ -25,6 +25,7 @@ extern "C" {
    directions (handled separately), the derived any-face copy, the not-remapped physical face copies (27..30) only
    count through the remapped bits. */
 #define UDE_B_DERIVED  (UDE_B_ANY_FACE | 0x78000000u | 0x01000000u)
+#define UDE_ACT_BLOW_AWAY 0xD5    /* BtlAct_BlowAwayHandler (gBtlActHandlers) */
 
 enum UdeThreat {           /* also the values of kUdeThreatByAction (generated) */
     UDE_T_NONE = 0,
@@ -44,7 +45,9 @@ enum UdeConfidence { UDE_C_NONE = 0, UDE_C_UNKNOWN = 1, UDE_C_PROBABLE = 2, UDE_
 /* What the engine sends. HOLD: guard held (v1). TAP: one fresh guard press, then release: opens the defence windows of
    BtlMove_UpdateDefenseTimers (evasion, throw break) without holding guard where guard cannot work. PRESS_HOLD: the
    same press, timed, then guard held. */
-enum UdeResponse { UDE_RESP_NONE = 0, UDE_RESP_HOLD = 1, UDE_RESP_TAP = 2, UDE_RESP_PRESS_HOLD = 3 };
+enum UdeResponse { UDE_RESP_NONE = 0, UDE_RESP_HOLD = 1, UDE_RESP_TAP = 2, UDE_RESP_PRESS_HOLD = 3,
+                   UDE_RESP_RECOVER = 4  /* face presses on alternate frames while knocked away (action 0xD5): the game's
+                                            BtlAct_BlowAwayHandler counts them and switches to 0xD7 (early recovery) */ };
 
 /* The defence windows at fighter +0x1068.. (src/battle/btl_char_move.c BtlMove_UpdateDefenseTimers). Each counts down
    to a floor; a fresh guard press (input condition 0x27, with fighter flag 5) re-opens it ONLY at the floor; a press
@@ -99,6 +102,8 @@ typedef struct UdeSnapshot {
     int my_request_pending;    /* own action request waiting (BtlAct_GetRequested != -1) */
     int blast_eta10;           /* frames x 10 until the nearest incoming blast arrives, -1 none */
     int win[UDE_W_COUNT];      /* the defence windows */
+    int recover_ok;            /* query 23: the character can recover from a knock-away by pressing (flags2 0x40, no 0x1D) */
+    int game_free;             /* query 24: BtlChar_IsFree */
 } UdeSnapshot;
 
 typedef struct UdeConfig {
@@ -117,13 +122,14 @@ typedef struct UdeConfig {
     int front_timing;          /* 1: also time the press of front guards to the contact (dodge chance); 0: hold at once (v1) */
     int tap_lead;              /* press when contact is at most this many frames away (default 1) */
     int request_guard;         /* 1: never act while the player's own action request is pending (default 1) */
+    int recover;               /* 1: recovery presses while knocked away (cycle 5; default 0 until an in-game A/B) */
 } UdeConfig;
 
 typedef struct UdeStats {
     unsigned frames, injected_frames, interventions, manual_overrides, suspends;
     unsigned reasons[UDE_R_COUNT];
     unsigned threats[UDE_T_COUNT];
-    unsigned taps, impossible;
+    unsigned taps, impossible, recover_presses;
 } UdeStats;
 
 typedef struct UdeState {
@@ -139,6 +145,7 @@ typedef struct UdeState {
     int tap_left;              /* frames of the current tap still to send */
     int since_press;           /* frames since the engine's last press edge (saturates) */
     int last_injected;         /* GUARD was injected on the previous frame */
+    int recover_phase;         /* alternates 1 / 0 while recovering: a press only every other frame */
     UdeStats stats;
 } UdeState;
 

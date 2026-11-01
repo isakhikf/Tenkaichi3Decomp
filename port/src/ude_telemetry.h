@@ -40,6 +40,7 @@ typedef struct UdeLineBuf {
 typedef struct UdeTelemetry {
     UdeLineBuf frames, events;
     int session, open, idle, release;
+    int log_all;                   /* ude_log=2: a per-frame line for EVERY fight frame (diagnosis of unlogged contacts) */
     int prev_hp, prev_injected, prev_my_action, prev_reason, prev_response;   /* the decision of the contact frame */
     int press_pending, press_frame, press_resp, press_threat;   /* last press edge, for its acceptance check */
     int last_press_frame, last_press_resp;

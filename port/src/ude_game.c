@@ -16,11 +16,12 @@
  *   ude_grace        4   frames after a manual action button before the engine may act
  *   ude_moving       0   1: also guard while a direction is held (then movement stops during the threat)
  *   ude_tail 3, ude_cap 90, ude_cooldown 20, ude_accept 8, ude_suspend 60, ude_min_ki 0
- *   ude_log          0   1: append threat/decision lines to ude_log.csv (for tools/validation/import_log.py)
+ *   ude_log          0   1: telemetry (ude_log.csv frames with a threat, ude_events.csv); 2: same, every fight frame
  *   ude_tap          1   timed single presses where guard cannot work (behind, throws, blasts from behind)
  *   ude_front_timing 0   1: also time the first press of front guards to the contact (needs measured timing)
  *   ude_tap_lead     1   frames before contact for the press
  *   ude_request_guard 1  never act while the player's own action request is pending
+ *   ude_recover      0   1: presses to recover early while knocked away (0xD5), where the character allows it
  */
 #include <stdio.h>
 #include <string.h>
@@ -84,9 +85,11 @@ static void load(void) {
     sCfg.front_timing = Port_Setting("ude_front_timing", 0);
     sCfg.tap_lead = Port_Setting("ude_tap_lead", 1);
     sCfg.request_guard = Port_Setting("ude_request_guard", 1);
+    sCfg.recover = Port_Setting("ude_recover", 0);
     if (sLogOn) {
         sTelOk = UdeTel_Open(&sTel, "", PORT_RELEASE);
         if (sTelOk) atexit(tel_exit);
+        sTel.log_all = sLogOn >= 2;   /* ude_log=2: every fight frame */
         fprintf(stderr, "bt3: defense assist telemetry %s\n", sTelOk ? "on (ude_log.csv, ude_events.csv)" : "could not open its files");
     }
     Ude_Reset(&sState[0]);
@@ -173,6 +176,8 @@ unsigned int PortUde_Filter(int player, int active, unsigned int buttons) {
             s.win[k] = BtlHit_PortUdeQuery(player, 10 + k);
         }
         s.blast_eta10 = BtlCharApi_PortBlastEta10(me);
+        s.recover_ok = BtlHit_PortUdeQuery(player, 23);
+        s.game_free = BtlHit_PortUdeQuery(player, 24);
     }
     s.my_ki = BtlCharApi_GetKi(me);
     s.my_hp = BtlCharApi_GetHp(me);

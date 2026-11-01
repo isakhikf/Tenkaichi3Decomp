@@ -15,11 +15,11 @@ static const char *const kReason[UDE_R_COUNT] = {
     "request_pending", "wait_timing", "window_cooling", "not_evadable"
 };
 static const char *const kThreat[UDE_T_COUNT] = { "none", "melee", "rush", "technique", "skill", "clash", "blast", "throw" };
-static const char *const kResp[4] = { "none", "hold", "tap", "press_hold" };
+static const char *const kResp[5] = { "none", "hold", "tap", "press_hold", "recover" };
 
 const char *Ude_ReasonName(int r) { return (r >= 0 && r < UDE_R_COUNT) ? kReason[r] : "?"; }
 const char *Ude_ThreatName(int t) { return (t >= 0 && t < UDE_T_COUNT) ? kThreat[t] : "?"; }
-const char *Ude_ResponseName(int r) { return (r >= 0 && r < 4) ? kResp[r] : "?"; }
+const char *Ude_ResponseName(int r) { return (r >= 0 && r < 5) ? kResp[r] : "?"; }
 
 void Ude_DefaultConfig(UdeConfig *c) {
     c->enabled = 1;
@@ -37,6 +37,7 @@ void Ude_DefaultConfig(UdeConfig *c) {
     c->front_timing = 0;
     c->tap_lead = 1;
     c->request_guard = 1;
+    c->recover = 0;
 }
 
 void Ude_Reset(UdeState *s) {
@@ -68,7 +69,10 @@ int Ude_ClassifyThreat(const UdeConfig *c, const UdeSnapshot *s) {
         return s->close ? UDE_T_RUSH : -UDE_R_OUT_OF_REACH;
     case UDE_T_TECHNIQUE:
         if (!c->guard_technique) return UDE_T_NONE;
-        if (s->opp_skill_kind == 1 || s->opp_skill_kind == 2 || s->incoming_blast || s->close) return UDE_T_TECHNIQUE;
+        /* kinds 1..2: BtlAiStep_GuardUntilSafe's "guard needed"; kind 3 (cycle 5, real log ude_events.csv session 1):
+           action 0x106 hit 4 times from ~380 units with no blast record seen by FindIncomingBlast (a ranged beam) */
+        if (s->opp_skill_kind == 1 || s->opp_skill_kind == 2 || s->opp_skill_kind == 3 || s->incoming_blast || s->close)
+            return UDE_T_TECHNIQUE;
         return UDE_T_NONE;
     case UDE_T_CLASH:
     case UDE_T_SKILL:
@@ -205,6 +209,23 @@ unsigned Ude_Step(UdeState *s, const UdeConfig *c, const UdeSnapshot *snap, unsi
         return release(s, out, physical, threat > 0 ? threat : 0, UDE_R_REQUEST_PENDING);
     }
     if (s->cooldown > 0) { s->cooldown--; return release(s, out, physical, threat > 0 ? threat : 0, UDE_R_COOLDOWN); }
+
+    /* ---- knock-away recovery (BtlAct_BlowAwayHandler, src/battle/btl_act_a.c): free, more than 8 frames into 0xD5, the
+       character able to recover: every NEW face press (battle bit ANY_FACE) counts; at (1 - health) x 12 + 4 presses the
+       game switches to 0xD7. A press on alternate frames, like the CPU's virtual pad. No threat needed: it is a state. */
+    if (c->recover && snap->have_ext && snap->my_action == UDE_ACT_BLOW_AWAY && snap->my_action_frame > 8 && snap->recover_ok &&
+        snap->game_free) {
+        s->holding = 0;
+        s->tail = 0;
+        s->tap_left = 0;
+        s->recover_phase = !s->recover_phase;
+        if (s->recover_phase) {
+            s->stats.recover_presses++;
+            return finish(s, out, physical | UDE_B_GUARD | UDE_B_ANY_FACE, 1, threat > 0 ? threat : 0, UDE_R_NONE, UDE_RESP_RECOVER, conf);
+        }
+        return finish(s, out, physical, 0, threat > 0 ? threat : 0, UDE_R_NONE, UDE_RESP_RECOVER, conf);
+    }
+    s->recover_phase = 0;
 
     /* ---- a tap in progress: send it, then release (exactly one press) */
     if (s->tap_left > 0) {

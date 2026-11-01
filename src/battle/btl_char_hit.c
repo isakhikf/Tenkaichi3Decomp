@@ -1495,6 +1495,9 @@ s32 BtlColl_IsGuarding(HitChr *chr) {
  *   19  distance between the two fighters x 10       20  opponent's yaw from its own facing towards me x 1000
  *   21  opponent's flag 0x7A (its attack was broken / repelled)
  *   22  own altitude above the ground x 10 (BtlCharApi_GetAltitude; y is down)
+ *   23  knock-away recovery possible for this character: parameter flags2 & 0x40 and own flag 0x1D down
+ *       (BtlAct_BlowAwayHandler, btl_act_a.c: face-button presses counted towards action 0xD7)
+ *   24  BtlChar_IsFree(me): the precondition of guard, evasion and throw break in the hit tests
  */
 extern s32 BtlAct_GetRequested(HitChr *chr);
 extern f32 BtlCharApi_GetAltitude(s32 objId);
@@ -1548,6 +1551,8 @@ s32 BtlHit_PortUdeQuery(s32 player, s32 what) {
     case 20: return (s32)(BtlOpp_GetYawFromFacing(opp) * 1000.0f);
     case 21: return BtlChar_TestFlag(opp, 0x7A);
     case 22: return (s32)(BtlCharApi_GetAltitude(BtlCharApi_GetObjIdOfPlayer(player)) * 10.0f);
+    case 23: return (BtlParam_GetFlags2(me) & 0x40) != 0 && !BtlChar_TestFlag(me, 0x1D);
+    case 24: return BtlChar_IsFree(me);
     }
     return -999;
 }

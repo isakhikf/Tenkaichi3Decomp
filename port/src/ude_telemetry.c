@@ -44,7 +44,7 @@ int UdeTel_Open(UdeTelemetry *t, const char *dir, int release) {
     t->frames.f = open_with_header(dir, "ude_log.csv",
         "frame,player,my_action,my_motion,opp_action,opp_motion,threat,injected,reason,close,blast,opp_attacking,skill_kind,hp,ki,buttons,"
         "response,confidence,press_edge,behind,anim_flags,attack_id,attack_flags,hit_active,flag5,request_pending,opp_action_frame,blast_eta10,"
-        "w_evade,w_blast,w_counter,w_perfect,w_throw,w_rush\n");
+        "w_evade,w_blast,w_counter,w_perfect,w_throw,w_rush,recover_ok,game_free\n");
     t->events.f = open_with_header(dir, "ude_events.csv",
         "type,session,frame,player,my_chara,opp_chara,opp_action,opp_frame,my_action,attack_id,distance10,behind,opp_yaw1000,altitude10,"
         "reaction,evade_flags,guard_flags,opp_broken,hp_delta,defense,press_age,accepted,result,detail\n");
@@ -163,13 +163,14 @@ void UdeTel_Frame(UdeTelemetry *t, const UdeSnapshot *s, const UdeTelIn *in, con
         t->presses++;
     }
     /* the cycle-2 per-frame line, for frames with something to see */
-    if (d->injected || d->threat != 0 || s->opp_attacking || (s->have_ext && s->win[0] > UDE_W_FLOOR)) {
-        buf_line(&t->frames, "%d,%d,%d,%d,%d,%d,%s,%d,%s,%d,%d,%d,%d,%d,%d,0x%X,%s,%d,%d,%d,0x%X,%d,0x%X,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d\n",
+    if (t->log_all || d->injected || d->threat != 0 || s->opp_attacking || (s->have_ext && s->win[0] > UDE_W_FLOOR)) {
+        buf_line(&t->frames, "%d,%d,%d,%d,%d,%d,%s,%d,%s,%d,%d,%d,%d,%d,%d,0x%X,%s,%d,%d,%d,0x%X,%d,0x%X,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d\n",
                  in->sim_frame, in->player, s->my_action, in->my_motion, s->opp_action, in->opp_motion, Ude_ThreatName(d->threat),
                  d->injected, Ude_ReasonName(d->reason), s->close, s->incoming_blast, s->opp_attacking, s->opp_skill_kind, s->my_hp,
                  s->my_ki, physical, Ude_ResponseName(d->response), d->confidence, d->press_edge, s->behind, (unsigned)s->anim_flags,
                  s->opp_attack_id, (unsigned)s->opp_attack_flags, s->opp_hit_active, s->flag5, s->my_request_pending,
-                 s->opp_action_frame, s->blast_eta10, s->win[0], s->win[1], s->win[2], s->win[3], s->win[4], s->win[5]);
+                 s->opp_action_frame, s->blast_eta10, s->win[0], s->win[1], s->win[2], s->win[3], s->win[4], s->win[5],
+                 s->recover_ok, s->game_free);
     }
     t->prev_hp = s->my_hp;
     t->prev_injected = d->injected;
