@@ -17,6 +17,10 @@
  *   ude_moving       0   1: also guard while a direction is held (then movement stops during the threat)
  *   ude_tail 3, ude_cap 90, ude_cooldown 20, ude_accept 8, ude_suspend 60, ude_min_ki 0
  *   ude_log          0   1: append threat/decision lines to ude_log.csv (for tools/validation/import_log.py)
+ *   ude_tap          1   timed single presses where guard cannot work (behind, throws, blasts from behind)
+ *   ude_front_timing 0   1: also time the first press of front guards to the contact (needs measured timing)
+ *   ude_tap_lead     1   frames before contact for the press
+ *   ude_request_guard 1  never act while the player's own action request is pending
  */
 #include <stdio.h>
 #include <string.h>
@@ -40,6 +44,8 @@ extern int BtlCharApi_GetKi(int objId);
 extern int BtlCharApi_GetHp(int objId);
 extern int BtlChar_GetFrame(void);
 extern int gPortResim;                                     /* gs/state.c: blanks run again (rollback) */
+extern int BtlHit_PortUdeQuery(int player, int what);      /* src/battle/btl_char_hit.c, #ifdef PORT: read-only */
+extern int BtlCharApi_PortBlastEta10(int objId);           /* src/battle/btl_capi_b.c, #ifdef PORT: read-only */
 
 static UdeConfig sCfg;
 static UdeState sState[2];
@@ -67,8 +73,27 @@ static void load(void) {
     sCfg.min_ki = Port_Setting("ude_min_ki", 0);
     sPlayers = Port_Setting("ude_player", 0);
     sLogOn = Port_Setting("ude_log", 0);
+    sCfg.tap_defense = Port_Setting("ude_tap", 1);
+    sCfg.front_timing = Port_Setting("ude_front_timing", 0);
+    sCfg.tap_lead = Port_Setting("ude_tap_lead", 1);
+    sCfg.request_guard = Port_Setting("ude_request_guard", 1);
     Ude_Reset(&sState[0]);
     Ude_Reset(&sState[1]);
+    {   /* measured contact timing (tools/validation/import_log.py writes it): "action frames" per line, '#' comments */
+        FILE *f = fopen("ude_eta.txt", "r");
+        if (f != NULL) {
+            char line[64];
+            int a, n, k = 0;
+            while (fgets(line, sizeof line, f) != NULL) {
+                if (line[0] != '#' && sscanf(line, "%i %i", &a, &n) == 2) {
+                    Ude_SetEta(a, n);
+                    k++;
+                }
+            }
+            fclose(f);
+            fprintf(stderr, "bt3: defense assist: %d measured timings from ude_eta.txt\n", k);
+        }
+    }
     sInit = 1;
 }
 
@@ -116,24 +141,45 @@ unsigned int PortUde_Filter(int player, int active, unsigned int buttons) {
     s.opp_skill_kind = BtlCharApi_GetOppSkillKind(me);
     s.incoming_blast = BtlCharApi_FindIncomingBlast(me, 0) != -1;
     s.close = BtlCharApi_IsClose(me);
-    s.behind = -1;                      /* not read in v1: needs positions (pointer accessors); guard still tried */
+    s.behind = -1;
+    s.have_ext = BtlHit_PortUdeQuery(player, 0) != -999;
+    if (s.have_ext) {
+        int k;
+        s.behind = BtlHit_PortUdeQuery(player, 0) != 0;
+        s.anim_flags = BtlHit_PortUdeQuery(player, 1);
+        s.opp_attack_id = BtlHit_PortUdeQuery(player, 2);
+        s.opp_attack_flags = BtlHit_PortUdeQuery(player, 3);
+        s.opp_hit_active = BtlHit_PortUdeQuery(player, 4);
+        s.flag5 = BtlHit_PortUdeQuery(player, 5);
+        s.my_action_frame = BtlHit_PortUdeQuery(player, 6);
+        s.my_request_pending = BtlHit_PortUdeQuery(player, 7) != -1;
+        s.opp_action_frame = BtlHit_PortUdeQuery(player, 8);
+        s.no_evade = BtlHit_PortUdeQuery(player, 9);
+        for (k = 0; k < UDE_W_COUNT; k++) {
+            s.win[k] = BtlHit_PortUdeQuery(player, 10 + k);
+        }
+        s.blast_eta10 = BtlCharApi_PortBlastEta10(me);
+    }
     s.my_ki = BtlCharApi_GetKi(me);
     s.my_hp = BtlCharApi_GetHp(me);
 
     out = Ude_Step(&sState[player], &sCfg, &s, buttons, &d);
     if (player == (sPlayers == 1 ? 1 : 0)) sIndicator = active ? sState[player].mode : -1;
 
-    if (sLogOn && (d.injected || d.threat != 0 || s.opp_attacking)) {
+    if (sLogOn && (d.injected || d.threat != 0 || s.opp_attacking || (s.have_ext && s.win[0] > UDE_W_FLOOR))) {
         if (sLog == NULL) {
             sLog = fopen("ude_log.csv", "a");
             if (sLog != NULL) {
-                fprintf(sLog, "frame,player,my_action,my_motion,opp_action,opp_motion,threat,injected,reason,close,blast,opp_attacking,skill_kind,hp,ki,buttons\n");
+                fprintf(sLog, "frame,player,my_action,my_motion,opp_action,opp_motion,threat,injected,reason,close,blast,opp_attacking,skill_kind,hp,ki,buttons,response,confidence,press_edge,behind,anim_flags,attack_id,attack_flags,hit_active,flag5,request_pending,opp_action_frame,blast_eta10,w_evade,w_blast,w_counter,w_perfect,w_throw,w_rush\n");
             }
         }
         if (sLog != NULL) {
-            fprintf(sLog, "%d,%d,%d,%d,%d,%d,%s,%d,%s,%d,%d,%d,%d,%d,%d,0x%X\n", BtlChar_GetFrame(), player, s.my_action,
-                    BtlCharApi_GetUnk974(me), s.opp_action, BtlCharApi_GetUnk974(opp), Ude_ThreatName(d.threat), d.injected,
-                    Ude_ReasonName(d.reason), s.close, s.incoming_blast, s.opp_attacking, s.opp_skill_kind, s.my_hp, s.my_ki, buttons);
+            fprintf(sLog, "%d,%d,%d,%d,%d,%d,%s,%d,%s,%d,%d,%d,%d,%d,%d,0x%X,%s,%d,%d,%d,0x%X,%d,0x%X,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d\n",
+                    BtlChar_GetFrame(), player, s.my_action, BtlCharApi_GetUnk974(me), s.opp_action, BtlCharApi_GetUnk974(opp),
+                    Ude_ThreatName(d.threat), d.injected, Ude_ReasonName(d.reason), s.close, s.incoming_blast, s.opp_attacking,
+                    s.opp_skill_kind, s.my_hp, s.my_ki, buttons, Ude_ResponseName(d.response), d.confidence, d.press_edge, s.behind,
+                    (unsigned)s.anim_flags, s.opp_attack_id, (unsigned)s.opp_attack_flags, s.opp_hit_active, s.flag5,
+                    s.my_request_pending, s.opp_action_frame, s.blast_eta10, s.win[0], s.win[1], s.win[2], s.win[3], s.win[4], s.win[5]);
         }
     }
     return out;

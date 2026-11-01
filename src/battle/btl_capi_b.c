@@ -278,6 +278,57 @@ s32 BtlCharApi_FindIncomingBlast(s32 objId, s32 mode) {
     return -1;
 }
 
+#ifdef PORT
+/* Defense assist (port/src/ude_game.c): frames x 10 until the nearest blast flying at the fighter reaches it (the test
+   and the distance of BtlCharApi_FindIncomingBlast, mode 0, without its 5-frame limit; distance over this frame's
+   travel), -1 when none comes toward it. Read only. */
+s32 BtlCharApi_PortBlastEta10(s32 objId) {
+    Vec4 pos;
+    Vec4 toBlast;
+    Vec4 dir;
+    Vec4 diff;
+    Vec4 step;
+    BtlCapiBBlastList *list;
+    BtlCapiBBlastRec *rec;
+    s32 i;
+    s32 best = -1;
+    f32 dist;
+    f32 speed;
+
+    BtlCharApi_GetPos(objId, &pos);
+    list = EftHit_GetList();
+    for (i = 0; i < list->count; i++) {
+        rec = &list->rec[i];
+        if (BtlCharApi_SkipBlastRec(objId, rec, 0) == 1) {
+            continue;
+        }
+        Vec3_Sub(&toBlast, (Vec4 *)rec->pos, &pos);
+        Vec3_Normalize(&toBlast, &toBlast);
+        Vec3_Sub(&step, (Vec4 *)rec->pos, &rec->prevPos);
+        Vec3_Normalize(&dir, &step);
+        if (0.0f < Vec3_Dot(&toBlast, &dir)) {
+            continue;
+        }
+        Vec3_Sub(&diff, (Vec4 *)rec->pos, &pos);
+        dist = Vec3_Length(&diff) - BtlCharApi_GetRadius(objId) - 10.0f;
+        speed = Vec3_Length(&step);
+        if (speed <= 0.0f) {
+            continue;
+        }
+        if (dist < 0.0f) {
+            dist = 0.0f;
+        }
+        if (dist / speed < 300.0f) {
+            s32 eta = (s32)(dist / speed * 10.0f);
+            if (best < 0 || eta < best) {
+                best = eta;
+            }
+        }
+    }
+    return best;
+}
+#endif
+
 /* 1 when some blast that is not the fighter's own is level with it or moving away from it (no caller). */
 s32 BtlCharApi_IsBlastPassing(s32 objId) {
     Vec4 pos;

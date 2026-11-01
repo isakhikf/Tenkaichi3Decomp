@@ -1471,3 +1471,52 @@ s32 BtlColl_IsGuarding(HitChr *chr) {
     }
     return 0;
 }
+
+#ifdef PORT
+/*
+ * Defense assist (port/src/ude_game.c): read-only scalar queries about fighter `player` and its opponent, so that the
+ * port side never holds a game pointer. Nothing is written. The values are the ones the hit tests above read.
+ *   0  BtlHit_IsFromBehind(opponent, me): an attack of the opponent would come from behind
+ *   1  own animation flags (0xB1: automatic evasion possible in BtlHit_CheckDodge, 0x31: counter / throw break)
+ *   2  opponent's attack id (BtlAtk_GetId; 0x55 is the throw of BtlHit_CheckThrowBreak), -1 none
+ *   3  opponent's attack flags (bit 1: avoidable by the level at +0x1068; 0x100000: the evasion becomes a counter)
+ *   4  opponent's hit volumes active this frame (the test at the top of BtlHit_TestHit)
+ *   5  own fighter flag 5 (the defence windows only open with it, BtlMove_UpdateDefenseTimers)
+ *   6  own frames in the current action (+0x964)      7  own requested action (-1 none)
+ *   8  opponent's frames in its current action        9  own fighter flag 0x5A (automatic evasion off)
+ *   10..15  own defence windows +0x1068, +0x106C, +0x1070, +0x1074, +0x1078, +0x107C
+ * -999 when the fighter or its opponent does not exist.
+ */
+extern s32 BtlAct_GetRequested(HitChr *chr);
+s32 BtlHit_PortUdeQuery(s32 player, s32 what) {
+    HitChr *me = BtlChar_Get(player);
+    HitChr *opp;
+
+    if (me == NULL) {
+        return -999;
+    }
+    opp = BtlChar_Get(BtlOpp_GetPlayer(me));
+    if (opp == NULL || opp == me) {
+        return -999;
+    }
+    switch (what) {
+    case 0: return BtlHit_IsFromBehind(opp, me);
+    case 1: return (s32)BtlAnim_GetFlags(BtlAnim_GetId(me));
+    case 2: return BtlAtk_GetId(opp);
+    case 3: return BtlAtk_GetFlags(opp);
+    case 4: return BtlAtk_GetId(opp) != -1 && ((BtlChar_GetObj(opp)->work->unk18020 & 0xF000000) || BtlChar_TestFlag(opp, 0x65));
+    case 5: return BtlChar_TestFlag(me, 5);
+    case 6: return *(s32 *)((u8 *)me + 0x964);
+    case 7: return BtlAct_GetRequested(me);
+    case 8: return *(s32 *)((u8 *)opp + 0x964);
+    case 9: return BtlChar_TestFlag(me, 0x5A);
+    case 10: return me->unk1068;
+    case 11: return me->unk106C;
+    case 12: return me->unk1070;
+    case 13: return me->unk1074;
+    case 14: return me->unk1078;
+    case 15: return me->unk107C;
+    }
+    return -999;
+}
+#endif
