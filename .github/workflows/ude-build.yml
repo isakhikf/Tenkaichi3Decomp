@@ -27,15 +27,19 @@ jobs:
           cd port/tests/ude
           gcc -std=c99 -O2 -Wall -Wextra -Werror -D_POSIX_C_SOURCE=200809L -I../../src ../../src/ude.c test_ude.c -o test_ude
           gcc -std=c99 -O2 -Wall -Wextra -Werror -D_POSIX_C_SOURCE=200809L -I../../src ../../src/ude.c test_ude_v2.c -o test_ude_v2
+          gcc -std=c99 -O2 -Wall -Wextra -Werror -D_POSIX_C_SOURCE=200809L -I../../src ../../src/ude.c ../../src/ude_telemetry.c test_telemetry.c -o test_telemetry
           ./test_ude 3000 > results_v1.csv
           ./test_ude_v2 data/edge_cover.txt data/db_states.txt > results_v2.csv
+          mkdir -p tel && ./test_telemetry tel 2 | tee results_telemetry.txt
+          grep -q "dropped=0" results_telemetry.txt
+          test "$(($(wc -l < tel/ude_log.csv) - 1))" = "$(sed -n 's/.*frame_lines=\([0-9]*\).*/\1/p' results_telemetry.txt)"
           grep -c ",PASS," results_v1.csv results_v2.csv
-          ! grep ",FAIL," results_v1.csv results_v2.csv
+          if grep ",FAIL," results_v1.csv results_v2.csv; then exit 1; fi
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: ude-test-results
-          path: port/tests/ude/results_*.csv
+          path: port/tests/ude/results_*
 
   build:
     needs: engine-tests
@@ -56,15 +60,28 @@ jobs:
           mkdir -p port/build
           docker run --rm -u "$(id -u):$(id -g)" -e HOME=/tmp -v "$PWD":/src -w /src \
             bt3-port-release:jammy sh port/release/inside.sh 2>&1 | tee port/build/ude_build_log.txt
-      - name: Check the defense assist is in the Windows program
+      - name: Verify the build (link, package contents, defense assist symbols, hashes)
         run: |
-          docker run --rm -v "$PWD":/src -w /src bt3-port-release:jammy sh -c \
-            'x86_64-w64-mingw32-nm port/build/bt3.exe 2>/dev/null | grep -E " T (PortUde_Filter|BtlHit_PortUdeQuery|BtlCharApi_PortBlastEta10)" || strings port/build/bt3.exe | grep -m1 "defense assist"'
+          set -e
+          cd port/build
+          if grep -i -E "undefined reference|unresolved external|^FAILED" compile_win64.txt link_win64.txt; then
+            echo "the Windows compile / link log reports errors"; exit 1
+          fi
+          unzip -l Tenkaichi3Decomp-windows-x64.zip | tee zip_contents.txt
+          for f in Tenkaichi3Decomp/Tenkaichi3Decomp.exe Tenkaichi3Decomp/Tenkaichi3Decomp-setup.exe Tenkaichi3Decomp/SDL3.dll; do
+            grep -q " $f$" zip_contents.txt || { echo "missing in the zip: $f"; exit 1; }
+          done
+          docker run --rm -v "$PWD":/b -w /b bt3-port-release:jammy sh -c \
+            'x86_64-w64-mingw32-nm bt3.exe 2>/dev/null | grep -E " T (PortUde_Filter|BtlHit_PortUdeQuery|BtlCharApi_PortBlastEta10|UdeTel_Frame)" || strings bt3.exe | grep -m1 "defense assist"' \
+            | tee ude_symbols.txt
+          test -s ude_symbols.txt
+          { echo "commit $GITHUB_SHA"; echo "run $GITHUB_RUN_ID"; sha256sum Tenkaichi3Decomp-windows-x64.zip Tenkaichi3Decomp-linux-x64.zip bt3.exe; } | tee ude_artifact_hashes.txt
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: ude-build-logs
-          path: port/build/*.txt
+          path: |
+            port/build/*.txt
       - uses: actions/upload-artifact@v4
         with:
           name: Tenkaichi3Decomp-windows-x64-ude

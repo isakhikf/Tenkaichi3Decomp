@@ -24,7 +24,10 @@
  */
 #include <stdio.h>
 #include <string.h>
+#include <stdlib.h>
 #include "ude.h"
+#include "ude_telemetry.h"
+#include "port_release.h"
 
 extern int Port_Setting(const char *name, int def);        /* plat_settings.c */
 extern void Port_SettingSave(const char *name, int value);
@@ -46,15 +49,19 @@ extern int BtlChar_GetFrame(void);
 extern int gPortResim;                                     /* gs/state.c: blanks run again (rollback) */
 extern int BtlHit_PortUdeQuery(int player, int what);      /* src/battle/btl_char_hit.c, #ifdef PORT: read-only */
 extern int BtlCharApi_PortBlastEta10(int objId);           /* src/battle/btl_capi_b.c, #ifdef PORT: read-only */
+extern int BtlCharApi_GetChara(int objId);
+extern unsigned long long SDL_GetTicksNS(void);            /* SDL3: only while ude_log=1, for the decision-time histogram */
 
 static UdeConfig sCfg;
 static UdeState sState[2];
 static int sInit;
 static volatile int sIndicator = -1;   /* read by the renderer thread: -1 not in a fight, else UdeMode of player 1 */
 static volatile int sToggle;
-static volatile unsigned sStamp;     /* +1 per call: the indicator hides when it stops moving (fight over) */           /* set by the renderer thread (F7), applied on the game thread */
-static FILE *sLog;
-static int sLogOn, sPlayers;
+static volatile unsigned sStamp;       /* +1 per call: the indicator hides when it stops moving (fight over) */
+static UdeTelemetry sTel;              /* 2 x 64 KB static buffers: no allocation */
+static int sLogOn, sPlayers, sTelOk;
+
+static void tel_exit(void) { if (sTelOk) UdeTel_Close(&sTel); }
 
 static void load(void) {
     Ude_DefaultConfig(&sCfg);
@@ -77,6 +84,11 @@ static void load(void) {
     sCfg.front_timing = Port_Setting("ude_front_timing", 0);
     sCfg.tap_lead = Port_Setting("ude_tap_lead", 1);
     sCfg.request_guard = Port_Setting("ude_request_guard", 1);
+    if (sLogOn) {
+        sTelOk = UdeTel_Open(&sTel, "", PORT_RELEASE);
+        if (sTelOk) atexit(tel_exit);
+        fprintf(stderr, "bt3: defense assist telemetry %s\n", sTelOk ? "on (ude_log.csv, ude_events.csv)" : "could not open its files");
+    }
     Ude_Reset(&sState[0]);
     Ude_Reset(&sState[1]);
     {   /* measured contact timing (tools/validation/import_log.py writes it): "action frames" per line, '#' comments */
@@ -126,6 +138,8 @@ unsigned int PortUde_Filter(int player, int active, unsigned int buttons) {
     if (!wanted(player)) return buttons;
     if (gPortResim) return buttons;     /* never during a rollback re-run (online is refused anyway) */
 
+    {
+    unsigned long long t0 = sTelOk ? SDL_GetTicksNS() : 0;
     memset(&s, 0, sizeof s);
     me = BtlCharApi_GetObjIdOfPlayer(player);
     opp = BtlCharApi_GetOpponentObjId(me);
@@ -166,21 +180,29 @@ unsigned int PortUde_Filter(int player, int active, unsigned int buttons) {
     out = Ude_Step(&sState[player], &sCfg, &s, buttons, &d);
     if (player == (sPlayers == 1 ? 1 : 0)) sIndicator = active ? sState[player].mode : -1;
 
-    if (sLogOn && (d.injected || d.threat != 0 || s.opp_attacking || (s.have_ext && s.win[0] > UDE_W_FLOOR))) {
-        if (sLog == NULL) {
-            sLog = fopen("ude_log.csv", "a");
-            if (sLog != NULL) {
-                fprintf(sLog, "frame,player,my_action,my_motion,opp_action,opp_motion,threat,injected,reason,close,blast,opp_attacking,skill_kind,hp,ki,buttons,response,confidence,press_edge,behind,anim_flags,attack_id,attack_flags,hit_active,flag5,request_pending,opp_action_frame,blast_eta10,w_evade,w_blast,w_counter,w_perfect,w_throw,w_rush\n");
-            }
+    if (sTelOk) {
+        UdeTelIn in;
+        unsigned long long ns = SDL_GetTicksNS() - t0;
+        memset(&in, 0, sizeof in);
+        in.sim_frame = BtlChar_GetFrame();
+        in.player = player;
+        in.my_chara = BtlCharApi_GetChara(me);
+        in.opp_chara = BtlCharApi_GetChara(opp);
+        in.my_motion = BtlCharApi_GetUnk974(me);
+        in.opp_motion = BtlCharApi_GetUnk974(opp);
+        in.reaction = 1;
+        if (s.have_ext) {
+            in.reaction = BtlHit_PortUdeQuery(player, 16);
+            in.evade_flags = BtlHit_PortUdeQuery(player, 17);
+            in.guard_flags = BtlHit_PortUdeQuery(player, 18);
+            in.distance10 = BtlHit_PortUdeQuery(player, 19);
+            in.opp_yaw1000 = BtlHit_PortUdeQuery(player, 20);
+            in.opp_broken = BtlHit_PortUdeQuery(player, 21);
+            in.altitude10 = BtlHit_PortUdeQuery(player, 22);
         }
-        if (sLog != NULL) {
-            fprintf(sLog, "%d,%d,%d,%d,%d,%d,%s,%d,%s,%d,%d,%d,%d,%d,%d,0x%X,%s,%d,%d,%d,0x%X,%d,0x%X,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d\n",
-                    BtlChar_GetFrame(), player, s.my_action, BtlCharApi_GetUnk974(me), s.opp_action, BtlCharApi_GetUnk974(opp),
-                    Ude_ThreatName(d.threat), d.injected, Ude_ReasonName(d.reason), s.close, s.incoming_blast, s.opp_attacking,
-                    s.opp_skill_kind, s.my_hp, s.my_ki, buttons, Ude_ResponseName(d.response), d.confidence, d.press_edge, s.behind,
-                    (unsigned)s.anim_flags, s.opp_attack_id, (unsigned)s.opp_attack_flags, s.opp_hit_active, s.flag5,
-                    s.my_request_pending, s.opp_action_frame, s.blast_eta10, s.win[0], s.win[1], s.win[2], s.win[3], s.win[4], s.win[5]);
-        }
+        UdeTel_Frame(&sTel, &s, &in, &d, buttons, ns);
+        if (!active) UdeTel_Flush(&sTel);   /* out of the fight: writing costs no fight frame */
     }
     return out;
+    }
 }

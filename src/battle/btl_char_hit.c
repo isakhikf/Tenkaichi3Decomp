@@ -1485,9 +1485,20 @@ s32 BtlColl_IsGuarding(HitChr *chr) {
  *   6  own frames in the current action (+0x964)      7  own requested action (-1 none)
  *   8  opponent's frames in its current action        9  own fighter flag 0x5A (automatic evasion off)
  *   10..15  own defence windows +0x1068, +0x106C, +0x1070, +0x1074, +0x1078, +0x107C
- * -999 when the fighter or its opponent does not exist.
+ * Results of the last hit step (BtlHit_BeginFrame resets them at the start of the step, so read before the next one
+ * they describe the previous frame's collisions):
+ *   16  own reaction id (HitReact.reaction, 1 = not hit)
+ *   17  own evasion flags: 1 = 0x74, 2 = 0x75, 4 = 0x76 (side steps), 8 = 0x12C (level evasion), 16 = 0x7C (evasion
+ *       counter), 32 = 0x77
+ *   18  own guard flags: 1 = 0x68, 2 = 0x69, 4 = 0x6A (guard reactions), 8 = 0x6B, 16 = 0x6D (rush stopped),
+ *       32 = 0x79 (throw break / repel), 64 = held 0xBE (guard crushed)
+ *   19  distance between the two fighters x 10       20  opponent's yaw from its own facing towards me x 1000
+ *   21  opponent's flag 0x7A (its attack was broken / repelled)
+ *   22  own altitude above the ground x 10 (BtlCharApi_GetAltitude; y is down)
  */
 extern s32 BtlAct_GetRequested(HitChr *chr);
+extern f32 BtlCharApi_GetAltitude(s32 objId);
+extern s32 BtlCharApi_GetObjIdOfPlayer(s32 player);
 s32 BtlHit_PortUdeQuery(s32 player, s32 what) {
     HitChr *me = BtlChar_Get(player);
     HitChr *opp;
@@ -1516,6 +1527,27 @@ s32 BtlHit_PortUdeQuery(s32 player, s32 what) {
     case 13: return me->unk1074;
     case 14: return me->unk1078;
     case 15: return me->unk107C;
+    case 16: return me->react.reaction;
+    case 17:
+        return (BtlChar_TestFlag(me, 0x74) ? 1 : 0) | (BtlChar_TestFlag(me, 0x75) ? 2 : 0) | (BtlChar_TestFlag(me, 0x76) ? 4 : 0) |
+               (BtlChar_TestFlag(me, 0x12C) ? 8 : 0) | (BtlChar_TestFlag(me, 0x7C) ? 16 : 0) | (BtlChar_TestFlag(me, 0x77) ? 32 : 0);
+    case 18:
+        return (BtlChar_TestFlag(me, 0x68) ? 1 : 0) | (BtlChar_TestFlag(me, 0x69) ? 2 : 0) | (BtlChar_TestFlag(me, 0x6A) ? 4 : 0) |
+               (BtlChar_TestFlag(me, 0x6B) ? 8 : 0) | (BtlChar_TestFlag(me, 0x6D) ? 16 : 0) | (BtlChar_TestFlag(me, 0x79) ? 32 : 0) |
+               (BtlChar_TestFlag(me, 0xBE) ? 64 : 0);
+    case 19: {
+        Vec4 d;
+        HitPose *a = BtlChar_GetPos(me);
+        HitPose *b = BtlChar_GetPos(opp);
+        d.x = b->pos.x - a->pos.x;
+        d.y = b->pos.y - a->pos.y;
+        d.z = b->pos.z - a->pos.z;
+        d.w = 0.0f;
+        return (s32)(Vec3_Length(&d) * 10.0f);
+    }
+    case 20: return (s32)(BtlOpp_GetYawFromFacing(opp) * 1000.0f);
+    case 21: return BtlChar_TestFlag(opp, 0x7A);
+    case 22: return (s32)(BtlCharApi_GetAltitude(BtlCharApi_GetObjIdOfPlayer(player)) * 10.0f);
     }
     return -999;
 }
