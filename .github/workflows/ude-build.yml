@@ -1,0 +1,77 @@
+# Defense assist (UDE) integration build: the host tests of the engine, then the official release build (the same
+# container as release.yml: Ubuntu 22.04, clang/LLVM 22, SDL3 from source, mingw-w64) for Linux and Windows x64.
+# Runs only for branches named ude-* and by hand; it never runs for main and never publishes a release.
+name: ude-build
+
+on:
+  push:
+    branches: ["ude-**"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ude-build-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  engine-tests:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: UDE host tests (unit, logic simulation, property campaigns, database-driven)
+        run: |
+          set -e
+          cd port/tests/ude
+          gcc -std=c99 -O2 -Wall -Wextra -Werror -D_POSIX_C_SOURCE=200809L -I../../src ../../src/ude.c test_ude.c -o test_ude
+          gcc -std=c99 -O2 -Wall -Wextra -Werror -D_POSIX_C_SOURCE=200809L -I../../src ../../src/ude.c test_ude_v2.c -o test_ude_v2
+          ./test_ude 3000 > results_v1.csv
+          ./test_ude_v2 data/edge_cover.txt data/db_states.txt > results_v2.csv
+          grep -c ",PASS," results_v1.csv results_v2.csv
+          ! grep ",FAIL," results_v1.csv results_v2.csv
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ude-test-results
+          path: port/tests/ude/results_*.csv
+
+  build:
+    needs: engine-tests
+    runs-on: ubuntu-22.04
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/build-push-action@v6
+        with:
+          context: port/release
+          tags: bt3-port-release:jammy
+          load: true
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+      - name: Build both archives (official inside.sh, no build key, version "dev")
+        run: |
+          mkdir -p port/build
+          docker run --rm -u "$(id -u):$(id -g)" -e HOME=/tmp -v "$PWD":/src -w /src \
+            bt3-port-release:jammy sh port/release/inside.sh 2>&1 | tee port/build/ude_build_log.txt
+      - name: Check the defense assist is in the Windows program
+        run: |
+          docker run --rm -v "$PWD":/src -w /src bt3-port-release:jammy sh -c \
+            'x86_64-w64-mingw32-nm port/build/bt3.exe 2>/dev/null | grep -E " T (PortUde_Filter|BtlHit_PortUdeQuery|BtlCharApi_PortBlastEta10)" || strings port/build/bt3.exe | grep -m1 "defense assist"'
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ude-build-logs
+          path: port/build/*.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Tenkaichi3Decomp-windows-x64-ude
+          path: port/build/Tenkaichi3Decomp-windows-x64.zip
+          if-no-files-found: error
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Tenkaichi3Decomp-linux-x64-ude
+          path: port/build/Tenkaichi3Decomp-linux-x64.zip
+          if-no-files-found: error
