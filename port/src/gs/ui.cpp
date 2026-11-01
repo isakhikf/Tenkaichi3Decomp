@@ -2464,6 +2464,33 @@ static bool save_icon_on(Uint64 now) {
     return sSaveFrom != 0;
 }
 
+// Defense assist indicator (port/src/ude_game.c): a small label in the lower left corner of the picture during a
+// fight: "DEF ON" (green), "DEF OFF" (grey), "DEF --" (amber: suspended, e.g. online, replay or a refused guard).
+// Hidden when the fight is not running (the engine's call counter stopped moving for half a second). ude_indicator=0
+// turns it off.
+extern "C" int PortUde_Indicator(void);
+extern "C" unsigned PortUde_Stamp(void);
+static int ude_mode(void) {
+    static unsigned last;
+    static Uint64 at;
+    unsigned stamp = PortUde_Stamp();
+    Uint64 t = SDL_GetTicks();
+    if (stamp != last) {
+        last = stamp;
+        at = t;
+    }
+    return t - at > 500 ? -1 : PortUde_Indicator();
+}
+static void ude_draw(int mode) {
+    ImDrawList *dl = ImGui::GetForegroundDrawList();
+    const char *text = mode == 1 ? "DEF ON" : mode == 2 ? "DEF --" : "DEF OFF";
+    ImU32 col = mode == 1 ? IM_COL32(120, 230, 120, 230) : mode == 2 ? IM_COL32(240, 190, 80, 230) : IM_COL32(170, 170, 170, 200);
+    float size = (float)gUiPresentH * 0.028f;
+    float x = (float)gUiPresentX + size * 0.8f, y = (float)(gUiPresentY + gUiPresentH) - size * 1.8f;
+    dl->AddText(NULL, size, ImVec2(x + 1.5f, y + 1.5f), IM_COL32(0, 0, 0, 200), text);
+    dl->AddText(NULL, size, ImVec2(x, y), col, text);
+}
+
 static void save_icon_draw(Uint64 now) {
     ImDrawList *dl = ImGui::GetForegroundDrawList();
     float h = (float)gUiPresentH * 0.055f, w = h * 0.78f;
@@ -2907,12 +2934,14 @@ static bool frame_build(void) {
     bool banner = sReady && sBanner[0] != '\0';
     Uint64 now = SDL_GetTicks();
     bool saving = save_icon_on(now) && sReady && gUiPresentW > 0 && gUiPresentH > 0;
+    int udeMode = sReady && gUiPresentW > 0 && gUiPresentH > 0 && Port_Setting("ude_indicator", 1) != 0 ? ude_mode() : -1;
+    bool ude = udeMode >= 0;
     bool watched = sReady && Port_NetWatchers() > 0 && !sOpen;  // a player's: who watches the match
     meter_count();
     sBuilt = false;
     bool upd = updLine[0] != '\0';
     UiA11y_Frame(sReady && sOpen && !sQuit, !sQuit); // (the screen reader in the windows: ui_a11y.cpp)
-    if (!sReady || (!sOpen && !sQuit && !notice && !overlay && !meter && !names && !bars && !chat && !banner && !saving && !watched && !upd)) {
+    if (!sReady || (!sOpen && !sQuit && !notice && !overlay && !meter && !names && !bars && !chat && !banner && !saving && !watched && !upd && !ude)) {
         return false;
     }
     if (sPadHold && sCapKind != 2) { // a binding was taken: the controller works the window again once nothing is held
@@ -2967,6 +2996,9 @@ static bool frame_build(void) {
     }
     if (meter) {
         meter_draw();
+    }
+    if (ude) {
+        ude_draw(udeMode);
     }
     if (chat) {
         chat_draw();

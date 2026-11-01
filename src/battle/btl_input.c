@@ -411,6 +411,16 @@ void BtlInput_BuildRecord(BtlInputChr *chr) {
         }
         buttons = BtlInput_MergeStick(chr, buttons, stick);
         buttons = BtlInput_AddDoubleTaps(chr, buttons, prevButtons, in->padStatus);
+#ifdef PORT
+        {
+            /* Defense assist (port/src/ude_game.c): may add BTLB_GUARD for a pad-driven fighter, off-line only. It reads
+               the fight through BtlCharApi_* and returns the word unchanged online, in a replay or outside the fight. */
+            extern u32 PortUde_Filter(s32 player, s32 active, u32 buttons);
+            s32 live = (BtlChar_TestFlag(chr, 2) || BtlChar_TestFlag(chr, 3)) && !BtlChar_TestFlag(chr, 0x136) &&
+                       BtlChars_IsTimeStopped() == 0;
+            buttons = PortUde_Filter(chr->player, live, buttons);
+        }
+#endif
         commands = BtlInput_BuildCommands(chr, buttons, prevButtons);
     }
     active = 0;

@@ -21,6 +21,9 @@
 #include "gs_draw.h"
 #include "shaders.h"
 #include "ui.h"
+/* Defense assist key (port/src/ude_game.c): setting ude_key, a scancode, F7 unless set. */
+extern int Port_Setting(const char *name, int def);
+static SDL_Scancode ude_key(void) { static int k = -1; if (k < 0) { k = Port_Setting("ude_key", SDL_SCANCODE_F7); } return (SDL_Scancode)k; }
 
 extern int Port_AspectMilli(void);
 
@@ -809,6 +812,10 @@ static void frame_end(void) {
         if (PortInput_Hotkey(&ev)) { Ui_Toggle(); continue; }
         if (Ui_Event(&ev)) { continue; }
         if (ev.type == SDL_EVENT_KEY_DOWN && ev.key.key == SDLK_ESCAPE) { if (!ev.key.repeat && !Ui_QuitAsk()) { exit(0); } /* (asks first) */ }
+        if (ev.type == SDL_EVENT_KEY_DOWN && !ev.key.repeat && ev.key.scancode == ude_key()) {
+            extern void PortUde_RequestToggle(void); /* port/src/ude_game.c: defense assist on / off */
+            PortUde_RequestToggle();
+        }
         if (ev.type == SDL_EVENT_KEY_DOWN && !ev.key.repeat && ev.key.key == SDLK_F9) { /* in-between pictures on / off */
             extern int gsInterp;
             extern void Port_SettingSave(const char *name, int value);
