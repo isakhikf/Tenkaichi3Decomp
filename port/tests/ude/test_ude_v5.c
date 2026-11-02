@@ -107,7 +107,7 @@ int main(void) {
     UdeSnapshot s;
     UdeDecision d;
     unsigned out;
-    char det[200];
+    char det[512];
     int n, ok, k;
 
     /* ---------------- translation table */
