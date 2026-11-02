@@ -12,6 +12,7 @@
  */
 #ifndef UDE_H
 #define UDE_H
+#include "ude_recipe.h"   /* Hybrid v5: the Codex R8 recipes (pure scalar too) */
 
 #ifdef __cplusplus
 extern "C" {
@@ -46,8 +47,9 @@ enum UdeConfidence { UDE_C_NONE = 0, UDE_C_UNKNOWN = 1, UDE_C_PROBABLE = 2, UDE_
    BtlMove_UpdateDefenseTimers (evasion, throw break) without holding guard where guard cannot work. PRESS_HOLD: the
    same press, timed, then guard held. */
 enum UdeResponse { UDE_RESP_NONE = 0, UDE_RESP_HOLD = 1, UDE_RESP_TAP = 2, UDE_RESP_PRESS_HOLD = 3,
-                   UDE_RESP_RECOVER = 4  /* face presses on alternate frames while knocked away (action 0xD5): the game's
-                                            BtlAct_BlowAwayHandler counts them and switches to 0xD7 (early recovery) */ };
+                   UDE_RESP_RECOVER = 4, /* face presses on alternate frames while knocked away (action 0xD5): the game's
+                                            BtlAct_BlowAwayHandler counts them and switches to 0xD7 (early recovery) */
+                   UDE_RESP_RECIPE = 100 /* Hybrid v5: 100 + UdeRecipeKind (a Codex R8 recipe packet; 100 = recipe guard) */ };
 
 /* The defence windows at fighter +0x1068.. (src/battle/btl_char_move.c BtlMove_UpdateDefenseTimers). Each counts down
    to a floor; a fresh guard press (input condition 0x27, with fighter flag 5) re-opens it ONLY at the floor; a press
@@ -71,6 +73,9 @@ enum UdeReason {           /* why the engine did not (or could not) intervene th
     UDE_R_WAIT_TIMING,      /* a timed press is planned, contact not close enough yet */
     UDE_R_WINDOW_COOLING,   /* a press now would reset the game's window (anti-mash): wait */
     UDE_R_NOT_EVADABLE,     /* behind / throw from behind / attack without the evadable flag: no valid defence */
+    UDE_R_MANUAL_ACTION,    /* v5: an action the player started is still running (Codex R8 ManualClaim) */
+    UDE_R_RECIPE_DECLINED,  /* v5: the recipe engine recognised the situation, but its answer is off or not legal now */
+    UDE_R_RECIPE_EDGE,      /* v5: the recipe engine keeps the guard edge fresh for the coming window (nothing sent) */
     UDE_R_COUNT
 };
 
@@ -104,6 +109,9 @@ typedef struct UdeSnapshot {
     int win[UDE_W_COUNT];      /* the defence windows */
     int recover_ok;            /* query 23: the character can recover from a knock-away by pressing (flags2 0x40, no 0x1D) */
     int game_free;             /* query 24: BtlChar_IsFree */
+    /* Hybrid v5: the recipe snapshot (BtlHit_PortUdeRecipe, src/battle/btl_char_hit.c). Ignored unless have_recipe. */
+    int have_recipe;
+    int recipe[UDE_X_COUNT];
 } UdeSnapshot;
 
 typedef struct UdeConfig {
@@ -123,6 +131,10 @@ typedef struct UdeConfig {
     int tap_lead;              /* press when contact is at most this many frames away (default 1) */
     int request_guard;         /* 1: never act while the player's own action request is pending (default 1) */
     int recover;               /* 1: recovery presses while knocked away (cycle 5; default 0 until an in-game A/B) */
+    /* Hybrid v5 (all 0 here, so v4 behaviour is the default of the core; the game adapter turns them on) */
+    int recipes;               /* 1: the Codex R8 recipes decide first; the v4 policy only where they see no threat */
+    int manual_claim;          /* 1: stay out while an action the player started is still running (Codex R8) */
+    UdeRecipeConfig rcfg;
 } UdeConfig;
 
 typedef struct UdeStats {
@@ -130,6 +142,7 @@ typedef struct UdeStats {
     unsigned reasons[UDE_R_COUNT];
     unsigned threats[UDE_T_COUNT];
     unsigned taps, impossible, recover_presses;
+    unsigned recipe_fires[UDE_K_COUNT], recipe_frames, claims;
 } UdeStats;
 
 typedef struct UdeState {
@@ -146,6 +159,9 @@ typedef struct UdeState {
     int since_press;           /* frames since the engine's last press edge (saturates) */
     int last_injected;         /* GUARD was injected on the previous frame */
     int recover_phase;         /* alternates 1 / 0 while recovering: a press only every other frame */
+    int claim;                 /* v5: the player's own action owns the fighter (manual_claim) */
+    int recipe_ran, recipe_edge, last_rresult;   /* v5: this update's recipe step (finish() reads them) */
+    UdeRecipeState rs;         /* v5: the recipe engine's plan */
     UdeStats stats;
 } UdeState;
 
@@ -156,8 +172,13 @@ typedef struct UdeDecision {
     int reason;                /* UdeReason when not injected */
     int response;              /* UdeResponse selected */
     int confidence;            /* UdeConfidence */
-    int press_edge;            /* this frame's word starts a guard press (the game sees condition 0x27) */
+    int press_edge;            /* this frame's word starts a press (guard, or the recipe's own edge) */
+    int origin;                /* v5: who decided: UdeOrigin */
+    int recipe_kind;           /* v5: UdeRecipeKind of the packet (0 none / plain guard) */
+    int recipe_result;         /* v5: UdeRecipeResult, -1 when the recipe engine did not run */
 } UdeDecision;
+
+enum UdeOrigin { UDE_O_NONE = 0, UDE_O_V4_HOLD = 1, UDE_O_V4_TAP = 2, UDE_O_RECOVER = 3, UDE_O_RECIPE = 4 };
 
 void Ude_DefaultConfig(UdeConfig *c);
 void Ude_Reset(UdeState *s);

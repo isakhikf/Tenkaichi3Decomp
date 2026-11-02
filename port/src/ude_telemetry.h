@@ -44,6 +44,8 @@ typedef struct UdeTelemetry {
     int prev_hp, prev_injected, prev_my_action, prev_reason, prev_response;   /* the decision of the contact frame */
     int press_pending, press_frame, press_resp, press_threat;   /* last press edge, for its acceptance check */
     int last_press_frame, last_press_resp;
+    int last_manual_frame;         /* v5: the player's own last action press, so a contact is never credited to the engine */
+    unsigned manual_contacts;
     unsigned contacts, presses, accepted, conflicts, threats;
     unsigned perf_bins[16];        /* decision time histogram, bin k: [2^k, 2^(k+1)) ns */
     unsigned long long perf_n, perf_sum, perf_max;

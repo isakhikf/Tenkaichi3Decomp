@@ -22,6 +22,13 @@
  *   ude_tap_lead     1   frames before contact for the press
  *   ude_request_guard 1  never act while the player's own action request is pending
  *   ude_recover      0   1: presses to recover early while knocked away (0xD5), where the character allows it
+ * Hybrid v5 (the Codex R8 input recipes, off-line; src/battle/btl_char_hit.c BtlHit_PortUdeRecipe + ude_recipe.c):
+ *   ude_recipes      1   0: the v4 engine alone
+ *   ude_claim        1   stay out while an action the player started is still running
+ *   ude_r_z 1 (Z-Counter, UP + RUSH)  ude_r_vanish 1 (VanishStep)  ude_r_sway 1 (Sonic Sway)  ude_r_evade 1
+ *   ude_r_throw 1 (throw break)  ude_r_rush 1 (rush evasion)  ude_r_deflect 1 (deflect stance, charged-blast guard)
+ *   ude_r_sidestep 1 (dash out of a projectile's path)  ude_r_kiplan 1 (stage the deflect on a ki cast)
+ *   ude_r_gdir       0   1: up / down added to guard from the attack's guard kinds (experimental)
  */
 #include <stdio.h>
 #include <string.h>
@@ -51,6 +58,7 @@ extern int gPortResim;                                     /* gs/state.c: blanks
 extern int BtlHit_PortUdeQuery(int player, int what);      /* src/battle/btl_char_hit.c, #ifdef PORT: read-only */
 extern int BtlCharApi_PortBlastEta10(int objId);           /* src/battle/btl_capi_b.c, #ifdef PORT: read-only */
 extern int BtlCharApi_GetChara(int objId);
+extern int BtlHit_PortUdeRecipe(int player, int what);    /* src/battle/btl_char_hit.c, #ifdef PORT: read-only */
 extern unsigned long long SDL_GetTicksNS(void);            /* SDL3: only while ude_log=1, for the decision-time histogram */
 
 static UdeConfig sCfg;
@@ -86,6 +94,22 @@ static void load(void) {
     sCfg.tap_lead = Port_Setting("ude_tap_lead", 1);
     sCfg.request_guard = Port_Setting("ude_request_guard", 1);
     sCfg.recover = Port_Setting("ude_recover", 0);
+    sCfg.recipes = Port_Setting("ude_recipes", 1);
+    sCfg.manual_claim = Port_Setting("ude_claim", 1);
+    {
+        unsigned k = 0;
+        if (Port_Setting("ude_r_z", 1)) k |= 1u << (UDE_K_ZCOUNTER - 1);
+        if (Port_Setting("ude_r_evade", 1)) k |= 1u << (UDE_K_EVADE - 1);
+        if (Port_Setting("ude_r_sway", 1)) k |= 1u << (UDE_K_SWAY - 1);
+        if (Port_Setting("ude_r_deflect", 1)) k |= (1u << (UDE_K_DEFLECT - 1)) | (1u << (UDE_K_CHARGED - 1));
+        if (Port_Setting("ude_r_sidestep", 1)) k |= 1u << (UDE_K_SIDESTEP - 1);
+        if (Port_Setting("ude_r_throw", 1)) k |= 1u << (UDE_K_THROWBREAK - 1);
+        if (Port_Setting("ude_r_rush", 1)) k |= 1u << (UDE_K_RUSHEVADE - 1);
+        if (Port_Setting("ude_r_vanish", 1)) k |= 1u << (UDE_K_VANISH - 1);
+        sCfg.rcfg.kinds = k;
+        sCfg.rcfg.ki_plan = Port_Setting("ude_r_kiplan", 1);
+        sCfg.rcfg.guard_direction = Port_Setting("ude_r_gdir", 0);
+    }
     if (sLogOn) {
         sTelOk = UdeTel_Open(&sTel, "", PORT_RELEASE);
         if (sTelOk) atexit(tel_exit);
@@ -178,6 +202,11 @@ unsigned int PortUde_Filter(int player, int active, unsigned int buttons) {
         s.blast_eta10 = BtlCharApi_PortBlastEta10(me);
         s.recover_ok = BtlHit_PortUdeQuery(player, 23);
         s.game_free = BtlHit_PortUdeQuery(player, 24);
+        /* v5: one game-side pass computes the recipe snapshot, then scalar reads */
+        if (sCfg.recipes && active && BtlHit_PortUdeRecipe(player, -1) == 1) {
+            s.have_recipe = 1;
+            for (k = 0; k < UDE_X_COUNT; k++) s.recipe[k] = BtlHit_PortUdeRecipe(player, k);
+        }
     }
     s.my_ki = BtlCharApi_GetKi(me);
     s.my_hp = BtlCharApi_GetHp(me);

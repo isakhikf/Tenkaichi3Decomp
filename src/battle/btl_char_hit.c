@@ -1556,4 +1556,562 @@ s32 BtlHit_PortUdeQuery(s32 player, s32 what) {
     }
     return -999;
 }
+/*
+ * Defense assist, Hybrid v5: the read-only primitives of the Codex R8 input recipes (OnlineDefense.c: impact_steps,
+ * first_melee_hit, melee_dodge_window, incoming_hit, native_projectile_eta, vanish_ready, ...), moved to the game side
+ * so that they read the game's own structures through the game's pointer model (port/tools/ptr32.py) instead of the
+ * Codex patcher's raw offsets. Nothing here writes game memory: no flag, timer, window, facing or gauge is changed.
+ *
+ * Every offset below was checked against the current headers (v0.1.39.3, 49e3e61):
+ *   fighter +0x000 player, +0x00C objId, +0x010 pose (HitPose, btl_char_hit.h; layout to +0xA8 in btl_act_d.h):
+ *     +0x10/0x14/0x18 position, +0x40/0x48 pose+0x30 (BtlMgrPose.unk30, btl_char_mgr.h), +0x50/0x58 pose+0x40
+ *     (movement of the previous frame, btl_act_d.h), +0x90/0x98 pose+0x80 direction of travel x / z, +0xA8 pose+0x98
+ *     speed; +0x994 active member (btl_char_mgr.h), +0x1068..0x107C the defence windows (HitChr), +0x1320 freeze
+ *   object (BtlChar_GetObj, eft_det_a.h EftDetObj / btl_char_hit.h HitObj): +0xCAC, +0xCAD hitNo, +0xF50 parts
+ *     (EftDetPart, 0x1D0 bytes, box sphere at +0x20 centre, +0x30 radius, flags bit 0 = last), +0xFD8 hitBox
+ *     (EftDetBox: +0xFDC min.y, +0xFE8 max.y)
+ *   hit list (EftHit_GetList, EftDetList): 64 x 0x190 records, count at +0x6400; record (EftDetRec / BtlCollHit,
+ *     btl_char_coll.h): +0x0C type (1 technique), +0x20 pos, +0x30 prevPos, +0x54 (1: cannot be redirected),
+ *     +0x64 owner (BtlCollOwner: +0 side, +4 slot), +0x68 atk (BtlCollAtk: +0x10 s16 side, +0x18 s16 kind),
+ *     +0x70 shape.type (0 sphere, 1 capsule), +0x7C shape.a (current), +0x80 shape.b (previous); sphere radius +0x10,
+ *     capsule end +0x10, capsule radius +0x20 (EftDetSphere / EftDetCapsule)
+ *   gauge (BtlMember_GetActiveGauge, HitGauge): +0x0C ki
+ * One correction to the Codex source: its early root-envelope forecast passed an uninitialised radius
+ * (projectile_motion(c,h,&bd,&bp,&bv,&br,&bg) with br unset); here it starts from the same body radius + 10.
+ *
+ * BtlHit_PortUdeRecipe(player, -1) computes the snapshot of `player` once per frame (from PortUde_Filter);
+ * BtlHit_PortUdeRecipe(player, i) returns field i (the UDE_X_* list of port/src/ude_recipe.h, same order).
+ * Timing is in game updates x 100, rounded up, so that "<= k updates" tests stay exact on the port side.
+ */
+extern f32 BtlAnim_GetFrame(HitChr *chr);
+extern f32 BtlAnim_GetStep(HitChr *chr);
+extern f32 BtlAnim_GetLength(HitChr *chr);
+extern f32 BtlOpp_GetDistance(HitChr *chr);
+extern f32 BtlOpp_GetRadius(HitChr *chr);
+extern f32 BtlOpp_GetGapXZ(HitChr *chr);
+extern s32 BtlColl_IsFacing(HitChr *chr, f32 yaw);
+extern f32 BtlColl_GetHitDir(HitChr *chr, void *hit, Vec4 *outDir);
+extern void *EftHit_GetList(void);
+extern s32 EftHit_CanHit(void *rec, s32 mode);
+extern s32 BtlKiBlast_GetFlagsOfHit(void *rec);
+extern s32 BtlKiBlast_GetTypeOfHit(void *rec);
+extern s32 BtlSkill_GetFlags(HitChr *chr, s32 slot);
+extern s32 BtlSkill_GetId(HitChr *chr, s32 slot);
+extern s32 BtlSuper_GetType(HitChr *chr, s32 cls);
+extern f32 BtlSuper_GetRushSpeed(HitChr *chr, s32 slot);
+extern f32 BtlSuper_GetShotSpeed(HitChr *chr, s32 slot);
+extern s32 BtlAct_GetQueued(HitChr *chr);
+extern s32 BtlAct_GetIdClass(HitChr *chr, s32 id);
+extern s32 BtlAct_GetTechniqueAction(HitChr *chr, s32 slot);
+extern s32 BtlAct_IsTechniqueId(s32 action);
+extern s32 BtlParam_GetAmountA(HitChr *chr);
+extern s32 BtlChars_IsTimeStopped(void);
+
+#define UR_I(p, o) (*(s32 *)((u8 *)(p) + (o)))
+#define UR_F(p, o) (*(f32 *)((u8 *)(p) + (o)))
+#define UR_P(p, o) (*(u8 **)((u8 *)(p) + (o)))
+#define UR_S8(p, o) (*(s8 *)((u8 *)(p) + (o)))
+#define UR_S16(p, o) (*(s16 *)((u8 *)(p) + (o)))
+#define UR_NONE 100000          /* 1000 updates: the Codex "no contact" value */
+#define UR_COUNT 71
+
+typedef struct UrIncoming {
+    void *hit;
+    f32 eta;
+    s32 tech, charged, behind, redirect, absorb, evadable, skill;
+} UrIncoming;
+
+static s32 sUdeRecipe[2][UR_COUNT];
+
+static f32 ur_absf(f32 f) { return f < 0 ? -f : f; }
+static s32 ur_reaction(s32 a) { return a == 0xBD || (a >= 0xC0 && a <= 0xE0); }
+static s32 ur_skill_action(s32 a) { return a >= 0xFD && a <= 0x102; }
+static s32 ur_ceil100(f32 t) {
+    f32 v;
+    s32 i;
+    if (!(t < 1000.0f)) return UR_NONE;
+    if (t < -1000.0f) return -UR_NONE;
+    v = t * 100.0f;
+    i = (s32)v;
+    if ((f32)i < v) i++;
+    return i;
+}
+static s32 ur_floor100(f32 t) {
+    f32 v;
+    s32 i;
+    if (!(t < 1000.0f)) return UR_NONE;
+    if (t < -1000.0f) return -UR_NONE;
+    v = t * 100.0f;
+    i = (s32)v;
+    if ((f32)i > v) i--;
+    return i;
+}
+static f32 ur_contact_range(HitChr *c) {
+    f32 r = 1.5f * (BtlCharApi_GetRadius(c->objId) + BtlOpp_GetRadius(c)) + 10.0f;
+    return r > 12.0f ? r : 12.0f;
+}
+static s32 ur_melee_charge_windup(HitChr *o) {
+    s32 act = BtlAct_GetCurrent(o), anim = BtlAnim_GetId(o);
+    if (act >= 0x47 && act <= 0x52 && anim >= 0x4A && anim <= 0x5B) return (anim - 0x4A) % 3 < 2;
+    if (act >= 0x53 && act <= 0x57 && anim >= 0x5C && anim <= 0x6A) return (anim - 0x5C) % 3 < 2;
+    return 0;
+}
+static s32 ur_first_melee_hit(HitChr *o) {
+    HitObj *obj = BtlChar_GetObj(o);
+    s32 first;
+    if (obj == NULL) return 0;
+    first = BtlObjAnim_QueryEvent(obj, 1, 0, 0);
+    if (first >= 0 && BtlAnim_GetFrame(o) < (f32)first) return 1;
+    return obj->hitNo == 0;
+}
+static s32 ur_melee_dodge_window(HitChr *c, u32 flags) {
+    HitObj *obj;
+    if (flags & 0xB1) return 1;
+    if (!(flags & 0x200000)) return 0;
+    if (BtlChar_TestFlag(c, 0x60)) return 1;
+    obj = BtlChar_GetObj(c);
+    if (obj == NULL) return 0;
+    return (s32)obj->hitNo == ~(s32)obj->unkCAC;
+}
+static s32 ur_melee_sequence_done(HitChr *c) {
+    HitObj *obj = BtlChar_GetObj(c);
+    return obj != NULL && (s32)obj->hitNo == ~(s32)obj->unkCAC;
+}
+static f32 ur_impact_steps(f32 frames, f32 step) {
+    f32 t = frames / step;
+    s32 whole;
+    if (t <= 0) return t;
+    whole = (s32)t;
+    return t - (f32)whole > 0.0001f ? (f32)(whole + 1) : (f32)whole;
+}
+static f32 ur_approaching_melee_range(HitChr *c, HitChr *o, f32 base, f32 horizon) {
+    f32 x = UR_F(c, 0x10) - UR_F(o, 0x10), z = UR_F(c, 0x18) - UR_F(o, 0x18);
+    f32 len = __builtin_sqrtf(x * x + z * z), closing, extra;
+    if (len < 0.01f) return base;
+    closing = (x * (UR_F(o, 0x50) - UR_F(c, 0x40)) + z * (UR_F(o, 0x58) - UR_F(c, 0x48))) / len;
+    if (closing <= 0) return base;
+    extra = closing * (horizon + 1.0f);
+    if (extra > 150.0f) extra = 150.0f;
+    return base + extra;
+}
+static f32 ur_charge_unsafe_range(HitChr *c, HitChr *o, f32 range, f32 horizon) {
+    f32 base = ur_approaching_melee_range(c, o, range * 4.0f, horizon + 6.0f), brake;
+    s32 a = BtlAct_GetCurrent(c);
+    if (a == 0x19 || a == 0x1A) {
+        brake = __builtin_sqrtf(UR_F(c, 0x40) * UR_F(c, 0x40) + UR_F(c, 0x48) * UR_F(c, 0x48)) * 16.0f;
+        if (brake > 400.0f) brake = 400.0f;
+        base += brake;
+    }
+    return base;
+}
+static f32 ur_contact_time(f32 dd, f32 dot, f32 ss, f32 radius, f32 growth) {
+    f32 a = ss - growth * growth, b = -2.0f * (dot + radius * growth), c = dd - radius * radius, dis, t, u;
+    if (c <= 0) return 0;
+    if (ur_absf(a) < 0.000001f) return b < 0 ? -c / b : 1000.0f;
+    dis = b * b - 4.0f * a * c;
+    if (dis < 0) return 1000.0f;
+    dis = __builtin_sqrtf(dis);
+    t = (-b - dis) / (2.0f * a);
+    u = (-b + dis) / (2.0f * a);
+    if (t < 0) return u >= 0 ? u : 1000.0f;
+    if (u >= 0 && u < t) t = u;
+    return t;
+}
+static f32 ur_rush_arrival(HitChr *c, HitChr *o, f32 speed) {
+    f32 dx = UR_F(c, 0x10) - UR_F(o, 0x10), dz = UR_F(c, 0x18) - UR_F(o, 0x18);
+    f32 len = __builtin_sqrtf(dx * dx + dz * dz), gap = BtlOpp_GetGapXZ(c);
+    f32 vx = UR_F(o, 0x90) * speed - UR_F(c, 0x40), vz = UR_F(o, 0x98) * speed - UR_F(c, 0x48);
+    f32 dir = UR_F(o, 0x90) * UR_F(o, 0x90) + UR_F(o, 0x98) * UR_F(o, 0x98), closing;
+    if (gap <= 0) return 0;
+    if (speed < 0.01f) return 1000.0f;
+    if (dir < 0.01f || len < 0.01f) return gap / speed;
+    closing = (dx * vx + dz * vz) / len;
+    return closing > 0.01f ? gap / closing : 1000.0f;
+}
+static void ur_projectile_motion(HitChr *c, u8 *h, f32 *dd, f32 *dot, f32 *ss, f32 *radius, f32 *growth) {
+    u8 *a = UR_P(h, 0x7C), *prev = UR_P(h, 0x80);
+    u8 *obj = (u8 *)BtlChar_GetObj(c);
+    s32 shape = UR_I(h, 0x70), j;
+    f32 now[3], before[3], target[3], u = 0, den = 0;
+    for (j = 0; j < 3; j++) target[j] = UR_F(c, 0x10 + j * 4);
+    if (obj != NULL && UR_P(obj, 0xF50) != NULL) {
+        f32 lo = UR_F(obj, 0xFDC), hi = UR_F(obj, 0xFE8);
+        if (hi >= lo && hi - lo < 10000) target[1] = (lo + hi) * 0.5f;
+    }
+    *dd = *dot = *ss = *growth = 0;
+    if (a != NULL && shape == 1) {
+        for (j = 0; j < 3; j++) {
+            f32 axis = UR_F(a, 0x10 + j * 4) - UR_F(a, j * 4);
+            u += (target[j] - UR_F(a, j * 4)) * axis;
+            den += axis * axis;
+        }
+        u = den > 0.000001f ? u / den : 0;
+        if (u < 0) u = 0;
+        if (u > 1) u = 1;
+    }
+    for (j = 0; j < 3; j++) {
+        if (a != NULL) {
+            now[j] = UR_F(a, j * 4) + (shape == 1 ? u * (UR_F(a, 0x10 + j * 4) - UR_F(a, j * 4)) : 0);
+            before[j] = prev != NULL ? UR_F(prev, j * 4) + (shape == 1 ? u * (UR_F(prev, 0x10 + j * 4) - UR_F(prev, j * 4)) : 0) : now[j];
+        } else {
+            now[j] = UR_F(h, 0x20 + j * 4);
+            before[j] = UR_F(h, 0x30 + j * 4);
+        }
+        {
+            f32 v = now[j] - before[j], d = target[j] - now[j];
+            *dot += v * d;
+            *ss += v * v;
+            *dd += d * d;
+        }
+    }
+    if (a != NULL) {
+        s32 ro = shape == 1 ? 0x20 : 0x10;
+        f32 r = UR_F(a, ro), pr = prev != NULL ? UR_F(prev, ro) : r;
+        if (r >= 0 && r < 10000) {
+            *radius += r;
+            if (pr >= 0 && pr < r) *growth = r - pr;
+        }
+    }
+}
+static f32 ur_body_sphere_eta(u8 *h, const f32 *target, f32 bodyRadius, f32 *dd, f32 *dot, f32 *ss, f32 *radius, f32 *growth) {
+    u8 *a = UR_P(h, 0x7C), *prev = UR_P(h, 0x80);
+    s32 shape = UR_I(h, 0x70), j;
+    f32 now[3], before[3], u = 0, den = 0;
+    *dd = *dot = *ss = *growth = 0;
+    *radius = bodyRadius;
+    if (a == NULL) return 1000.0f;
+    if (shape == 1) {
+        for (j = 0; j < 3; j++) {
+            f32 axis = UR_F(a, 0x10 + j * 4) - UR_F(a, j * 4);
+            u += (target[j] - UR_F(a, j * 4)) * axis;
+            den += axis * axis;
+        }
+        u = den > 0.000001f ? u / den : 0;
+        if (u < 0) u = 0;
+        if (u > 1) u = 1;
+    }
+    for (j = 0; j < 3; j++) {
+        now[j] = UR_F(a, j * 4) + (shape == 1 ? u * (UR_F(a, 0x10 + j * 4) - UR_F(a, j * 4)) : 0);
+        before[j] = prev != NULL ? UR_F(prev, j * 4) + (shape == 1 ? u * (UR_F(prev, 0x10 + j * 4) - UR_F(prev, j * 4)) : 0) : now[j];
+        {
+            f32 v = now[j] - before[j], d = target[j] - now[j];
+            *dot += v * d;
+            *ss += v * v;
+            *dd += d * d;
+        }
+    }
+    {
+        s32 ro = shape == 1 ? 0x20 : 0x10;
+        f32 r = UR_F(a, ro), pr = prev != NULL ? UR_F(prev, ro) : r;
+        if (!(r >= 0 && r < 10000)) return 1000.0f;
+        *radius += r;
+        if (pr >= 0 && pr < r) *growth = r - pr;
+    }
+    return ur_contact_time(*dd, *dot, *ss, *radius, *growth);
+}
+static f32 ur_native_projectile_eta(HitChr *c, u8 *h, f32 *dd, f32 *dot, f32 *ss, f32 *radius, f32 *growth) {
+    u8 *obj = (u8 *)BtlChar_GetObj(c);
+    u8 *parts = obj != NULL ? UR_P(obj, 0xF50) : NULL;
+    s32 i, valid = 0, ended = 0;
+    f32 best = 1000.0f;
+    if (parts != NULL && UR_P(h, 0x7C) != NULL) {
+        for (i = 0; i < 64; i++) {
+            u8 *part = parts + i * 0x1D0;
+            f32 target[3];
+            f32 r = UR_F(part, 0x30), d, p, v, rr, g, t;
+            target[0] = UR_F(part, 0x20);
+            target[1] = UR_F(part, 0x24);
+            target[2] = UR_F(part, 0x28);
+            if (r >= 0 && r < 10000 && ur_absf(target[0]) < 1000000 && ur_absf(target[1]) < 1000000 && ur_absf(target[2]) < 1000000) {
+                valid++;
+                t = ur_body_sphere_eta(h, target, r, &d, &p, &v, &rr, &g);
+                if (t >= 0 && t < best) {
+                    best = t;
+                    *dd = d;
+                    *dot = p;
+                    *ss = v;
+                    *radius = rr;
+                    *growth = g;
+                }
+            }
+            if (UR_I(part, 0) & 1) {
+                ended = 1;
+                break;
+            }
+        }
+    }
+    if (parts != NULL && ended && valid) return best;
+    ur_projectile_motion(c, h, dd, dot, ss, radius, growth);
+    return ur_contact_time(*dd, *dot, *ss, *radius, *growth);
+}
+static UrIncoming ur_merge(UrIncoming *contacts, s32 count) {
+    UrIncoming best;
+    s32 i;
+    __builtin_memset(&best, 0, sizeof best);
+    best.eta = 1000.0f;
+    for (i = 0; i < count; i++) {
+        if (contacts[i].eta < best.eta) best = contacts[i];
+    }
+    for (i = 0; i < count; i++) {
+        if (contacts[i].eta <= best.eta + 0.5f) {
+            best.behind |= contacts[i].behind;
+            best.tech |= contacts[i].tech;
+            best.charged |= contacts[i].charged;
+            best.skill |= contacts[i].skill;
+            best.redirect &= contacts[i].redirect;
+            best.absorb &= contacts[i].absorb;
+            best.evadable &= contacts[i].evadable;
+        }
+    }
+    return best;
+}
+static UrIncoming ur_incoming_hit(HitChr *c, f32 limit) {
+    UrIncoming contacts[64], none;
+    u8 *list = (u8 *)EftHit_GetList();
+    s32 i, n, count = 0;
+    __builtin_memset(&none, 0, sizeof none);
+    none.eta = 1000.0f;
+    if (list == NULL) return none;
+    n = UR_I(list, 0x6400);
+    if (n < 0 || n > 64) return none;
+    for (i = 0; i < n; i++) {
+        u8 *h = list + i * 0x190;
+        u8 *owner = UR_P(h, 0x64), *def = UR_P(h, 0x68);
+        s32 tech = UR_I(h, 0xC) != 0, kind = 0, slot = 0;
+        f32 dot = 0, ss = 0, dd = 0, r, t, growth = 0;
+        UrIncoming *in;
+        if (!EftHit_CanHit(h, 1)) continue;
+        r = BtlCharApi_GetRadius(c->objId) + 10.0f;
+        if (tech) {
+            if (owner == NULL || UR_I(owner, 0) == c->player || UR_I(owner, 4) < 0 || UR_I(owner, 4) > 4) continue;
+            slot = UR_I(owner, 4);
+        } else {
+            if (def == NULL || (s32)UR_S16(def, 0x10) == c->objId) continue;
+            kind = UR_S16(def, 0x18);
+        }
+        if (UR_I(h, 0x70) < 0 || UR_I(h, 0x70) > 1) continue;
+        t = ur_native_projectile_eta(c, h, &dd, &dot, &ss, &r, &growth);
+        {
+            f32 bd, bp, bv, br = BtlCharApi_GetRadius(c->objId) + 10.0f, bg, early;
+            ur_projectile_motion(c, h, &bd, &bp, &bv, &br, &bg);
+            early = ur_contact_time(bd, bp, bv, br, bg);
+            if (early < t) t = early;
+        }
+        if (!(t >= 0.0f && t <= limit)) continue;
+        in = &contacts[count++];
+        __builtin_memset(in, 0, sizeof *in);
+        in->hit = h;
+        in->eta = t;
+        in->tech = tech;
+        in->charged = !tech && kind != 0 && kind != 4 && kind != 8;
+        in->behind = BtlColl_IsFacing(c, BtlColl_GetHitDir(c, h, NULL));
+        in->redirect = !tech && UR_I(h, 0x54) != 1 && !(BtlKiBlast_GetFlagsOfHit(h) & 2);
+        in->skill = tech && slot < 2;
+        in->evadable = tech && !in->skill;
+        if (tech) {
+            HitChr *attacker = BtlChar_Get(UR_I(owner, 0));
+            in->absorb = attacker != NULL && !in->skill && (BtlSuper_GetFlags(attacker, slot) & 4) != 0;
+            if (in->skill && attacker != NULL) in->evadable = (BtlSkill_GetFlags(attacker, slot) & 0x400000) != 0;
+        } else {
+            s32 type = BtlKiBlast_GetTypeOfHit(h);
+            in->absorb = in->redirect && type != 2 && type != 3;
+        }
+    }
+    return ur_merge(contacts, count);
+}
+static s32 ur_inc_bits(const UrIncoming *in) {
+    if (in->hit == NULL) return 0;
+    return 1 | (in->tech ? 2 : 0) | (in->charged ? 4 : 0) | (in->behind ? 8 : 0) | (in->redirect ? 16 : 0) |
+           (in->absorb ? 32 : 0) | (in->evadable ? 64 : 0) | (in->skill ? 128 : 0);
+}
+static s32 ur_vanish_ready(HitChr *c, u32 caps) {
+    s32 a = BtlAct_GetCurrent(c), an = BtlAnim_GetId(c);
+    s32 window = a == 0x44 && ((an == 0 || an == 0x26) || (an >= 0x37 && an <= 0x3F && an != 0x3B && BtlChar_TestFlag(c, 0x31)));
+    if ((a == 0xB || a == 0xE || a == 0xF) && BtlAct_TestPoweredSkill(c, 8)) return 1;
+    return window && (caps & 8) && BtlChar_TestFlag(c, 5) && BtlMember_HasKi(c, BtlParam_GetAmountA(c));
+}
+static s32 ur_guard_rank(s32 r) { return r == 0 ? 0 : r == 1 ? 1 : r == 2 ? 2 : r == 4 ? 3 : 9; }
+static s32 ur_guard_direction(HitChr *o) {
+    s32 a = ur_guard_rank(BtlAtk_GetGuardKindA(o)), up = ur_guard_rank(BtlAtk_GetGuardKindB(o)), down = ur_guard_rank(BtlAtk_GetGuardKindC(o));
+    if (up < a && up <= down) return 0x10;
+    if (down < a) return 0x40;
+    return 0;
+}
+static s32 ur_stun_guard(HitChr *c, HitChr *o, u32 attackFlags, s32 back) {
+    s32 a, up, down;
+    if (back || !(attackFlags & 0x10) || !BtlChar_TestFlag(c, 0x41)) return -1;
+    a = BtlAtk_GetGuardKindA(o);
+    up = BtlAtk_GetGuardKindB(o);
+    down = BtlAtk_GetGuardKindC(o);
+    if (a == 0 || a == 2) return 0;
+    if (up == 0 || up == 2) return 0x10;
+    if (down == 0 || down == 2) return 0x40;
+    return -1;
+}
+
+s32 BtlHit_PortUdeRecipe(s32 player, s32 what) {
+    HitChr *c, *o;
+    s32 *R;
+    const f32 horizon = 1.0f;       /* offline: no pad delay (Codex horizon = delay / 2 + 1, bias 0) */
+    f32 cur, step, until = 1000.0f, range, dist;
+    u32 ownFlags, caps, attackFlags = 0;
+    s32 act, oa, anim, first, atk, back, throwing, rushing, grabbing, casting, slot, rushCast = 0, rushType = -1;
+    s32 captureCast, melee, globalStopped, stopped;
+    UrIncoming inc, volley, pending;
+
+    if (player < 0 || player > 1) return -999;
+    R = sUdeRecipe[player];
+    if (what >= 0) return what < UR_COUNT ? R[what] : -999;
+    __builtin_memset(R, 0, sizeof sUdeRecipe[0]);
+    c = BtlChar_Get(player);
+    if (c == NULL) return 0;
+    o = BtlChar_Get(BtlOpp_GetPlayer(c));
+    if (o == NULL || o == c || BtlChar_GetObj(c) == NULL || BtlChar_GetObj(o) == NULL) return 0;
+
+    globalStopped = BtlChars_IsTimeStopped() != 0;
+    stopped = globalStopped || UR_I(c, 0x1320) > 0;   /* BtlMgrChr.freeze */
+    act = BtlAct_GetCurrent(c);
+    oa = BtlAct_GetCurrent(o);
+    anim = BtlAnim_GetId(o);
+    cur = BtlAnim_GetFrame(o);
+    step = BtlAnim_GetStep(o);
+    if (step < 0.01f || step > 100.0f) step = 1.0f;
+    first = BtlObjAnim_QueryEvent(BtlChar_GetObj(o), 1, 0, 1);
+    ownFlags = BtlAnim_GetFlags(BtlAnim_GetId(c));
+    caps = BtlParam_GetFlags2(c);
+    dist = BtlOpp_GetDistance(c);
+    range = ur_contact_range(c);
+    atk = BtlAtk_GetId(o);
+    back = BtlHit_IsFromBehind(o, c);
+
+    R[1] = anim;                                   /* UDE_X_OPP_ANIM */
+    R[2] = ur_ceil100(cur);                        /* UDE_X_OPP_FRAME100 */
+    R[3] = first;                                  /* UDE_X_FIRST_EVENT */
+    R[4] = oa;                                     /* UDE_X_OPP_ACT */
+    R[5] = UR_I(o, 0x994);                         /* UDE_X_OPP_MEMBER */
+    R[6] = act;                                    /* UDE_X_MY_ACT */
+    R[7] = (s32)ownFlags;                          /* UDE_X_OWN_FLAGS */
+    R[8] = (s32)caps;                              /* UDE_X_CAPS */
+    R[9] = BtlParam_GetFlags(c);                   /* UDE_X_PFLAGS */
+    R[10] = BtlChar_IsFree(c) != 0;                /* UDE_X_FREE */
+    R[11] = stopped;                               /* UDE_X_STOPPED */
+    R[12] = globalStopped;                         /* UDE_X_GLOBAL_STOPPED */
+    R[13] = !stopped && ((act >= 0x20 && act <= 0x23) || act == 0x35) && BtlChar_TestFlag(c, 0x44) && BtlChar_TestFlag(c, 0x46);   /* UDE_X_VANISH_ACTIVE */
+    {
+        s32 cl = BtlAct_GetCurrentClass(o);
+        R[14] = cl >= 0 && cl < 2 && ur_skill_action(oa) && BtlSkill_GetId(o, cl) == 1;   /* UDE_X_OPP_CAPTURE_SKILL */
+    }
+    R[15] = dist < 180.0f;                         /* UDE_X_D_LT_180 */
+    R[16] = (ur_reaction(act) && atk >= 0 && dist < range) ? ur_stun_guard(c, o, BtlAtk_GetFlags(o), back) : -1;   /* UDE_X_STUN_REACT */
+    volley = ur_incoming_hit(c, 18.0f);
+    R[17] = ur_inc_bits(&volley);                  /* UDE_X_VOLLEY */
+    R[18] = back;                                  /* UDE_X_BACK */
+    R[19] = oa == 0xAE && (anim == 0x71 || anim == 0x72);  /* UDE_X_KI_CAST */
+    R[20] = oa == 0xAE && (anim == 0 || anim == 0x26);    /* UDE_X_KI_CONT */
+    pending = ur_incoming_hit(c, 24.0f);
+    R[21] = ur_inc_bits(&pending);                 /* UDE_X_PENDING24 */
+    R[22] = atk >= 0 && !ur_reaction(oa) && dist < range;  /* UDE_X_URGENT */
+    inc = ur_incoming_hit(c, horizon + 18.0f);
+    R[23] = ur_inc_bits(&inc);                     /* UDE_X_INC */
+    R[24] = inc.hit != NULL ? ur_ceil100(inc.eta) : UR_NONE;   /* UDE_X_INC_ETA100 */
+    R[25] = inc.hit != NULL && BtlChar_TestFlag(c, inc.tech ? (inc.skill ? 0x45 : 0x46) : 0x44);   /* UDE_X_PROTECTED */
+    R[26] = atk;                                   /* UDE_X_ATK */
+    R[27] = BtlAtk_GetFlags(o);                    /* UDE_X_ATK_FLAGS */
+    R[28] = ur_ceil100(dist);                      /* UDE_X_DIST100 */
+    R[29] = ur_ceil100(range);                     /* UDE_X_RANGE100 */
+
+    throwing = atk == 0x55 || (oa >= 0xB4 && oa <= 0xB6);
+    slot = BtlAct_GetCurrentClass(o);
+    casting = BtlAct_IsTechniqueId(oa) && slot >= 2 && slot <= 4;
+    if (!casting && atk < 0 && oa >= 0x1B && oa <= 0x1D && BtlChar_IsFree(o)) {
+        s32 queued = BtlAct_GetQueued(o);
+        if (queued == 0x105) queued = BtlAct_GetTechniqueAction(o, 4);
+        if (queued >= 0x106 && queued <= 0x11A) {
+            slot = BtlAct_GetIdClass(o, queued);
+            if (slot >= 2 && slot <= 4) casting = 1;
+        }
+    }
+    if (casting && oa >= 0x11B && oa <= 0x123) {
+        rushType = BtlSuper_GetType(o, slot);
+        rushCast = rushType == 4 || rushType == 5 || rushType == 6 || rushType == 10;
+    }
+    captureCast = slot >= 0 && slot < 2 && ur_skill_action(oa) && BtlSkill_GetId(o, slot) == 1 && dist < 180.0f;
+    if (captureCast) casting = 1;
+    rushing = BtlChar_TestFlag(o, 0x49) != 0 || rushCast;
+    grabbing = BtlChar_TestFlag(o, 0x4C) || BtlChar_TestFlag(o, 0x4D);
+    melee = atk >= 0 && atk != 0x55 && !BtlChar_TestFlag(o, 0x49) && !ur_reaction(oa) &&
+            dist < ur_approaching_melee_range(c, o, range, horizon);
+    if (melee) attackFlags = BtlAtk_GetFlags(o);
+    if ((melee || (throwing && dist < range * 4.0f)) && first >= 0) until = ur_impact_steps((f32)first - cur, step);
+    if (rushing) {
+        f32 speed = ur_absf(UR_F(o, 0xA8)), eta = 1000.0f;
+        s32 dashAnim = slot >= 2 && slot <= 4 && (anim == 0x107 + (slot - 2) * 0x22 || anim == 0x108 + (slot - 2) * 0x22);
+        if (rushCast && dashAnim && speed < 0.01f) speed = BtlSuper_GetRushSpeed(o, slot);
+        if ((BtlChar_TestFlag(o, 0x49) || dashAnim) && speed > 0.01f) eta = ur_rush_arrival(c, o, speed);
+        if (rushType == 10 && dashAnim) eta = (BtlAnim_GetLength(o) * 0.5f - cur) / step;
+        if (eta < 0) eta = 0;
+        until = eta;
+    }
+    if (grabbing && dist < 100.0f) until = 0;
+
+    R[30] = throwing;                              /* UDE_X_THROWING */
+    R[31] = casting;                               /* UDE_X_CASTING */
+    R[32] = slot;                                  /* UDE_X_SLOT */
+    R[33] = rushCast;                              /* UDE_X_RUSHCAST */
+    R[34] = rushType;                              /* UDE_X_RUSHTYPE */
+    R[35] = captureCast;                           /* UDE_X_CAPTURE */
+    R[36] = rushing;                               /* UDE_X_RUSHING */
+    R[37] = grabbing;                              /* UDE_X_GRABBING */
+    R[38] = melee;                                 /* UDE_X_MELEE */
+    R[39] = ur_ceil100(until);                     /* UDE_X_UNTIL100 */
+    R[40] = ur_melee_sequence_done(o);             /* UDE_X_SEQ_DONE */
+    R[41] = ur_melee_charge_windup(o);             /* UDE_X_CHARGE_WINDUP */
+    R[42] = dist < ur_charge_unsafe_range(c, o, range, horizon);   /* UDE_X_CHARGE_UNSAFE */
+    R[43] = c->unk1068;                            /* UDE_X_W1068 */
+    R[44] = c->unk106C;                            /* UDE_X_W106C */
+    R[45] = c->unk1070;                            /* UDE_X_W1070 */
+    R[46] = c->unk1074;                            /* UDE_X_W1074 */
+    R[47] = c->unk1078;                            /* UDE_X_W1078 */
+    R[48] = c->unk107C;                            /* UDE_X_W107C */
+    R[49] = BtlChar_TestFlag(c, 5) != 0;           /* UDE_X_FLAG5 */
+    R[50] = BtlChar_TestFlag(c, 0x5A) != 0;        /* UDE_X_NO_EVADE */
+    R[51] = ur_melee_dodge_window(c, ownFlags);    /* UDE_X_DODGE_WIN */
+    R[52] = ur_first_melee_hit(o);                 /* UDE_X_FIRST_HIT */
+    R[53] = UR_I(o, 0x1320);                       /* UDE_X_OPP_FREEZE */
+    R[54] = -1;                                    /* UDE_X_CAST_ETA100: native 0x400 release event + shot travel */
+    if (inc.hit == NULL && casting && !rushCast && !captureCast && slot >= 2 && slot <= 4 && dist < 240.0f) {
+        s32 release = BtlObjAnim_QueryEvent(BtlChar_GetObj(o), 0x400, 0, 1);
+        if (release < 0) {
+            release = BtlObjAnim_QueryEvent(BtlChar_GetObj(o), 0x400, 0, 0);
+            if (release >= 0 && cur > (f32)release + step) release = -1;
+        }
+        if (release >= 0) {
+            f32 speed = BtlSuper_GetShotSpeed(o, slot);
+            if (speed > 0.01f) {
+                f32 eta = ur_impact_steps((f32)release - cur, step);
+                if (eta < 0) eta = 0;
+                eta += dist / speed;
+                R[54] = ur_ceil100(eta);
+            }
+        }
+    }
+    R[55] = ur_vanish_ready(c, caps);              /* UDE_X_VANISH */
+    R[56] = BtlChar_TestFlag(o, 0xA5) != 0;        /* UDE_X_OPP_A5 */
+    R[57] = BtlParam_GetUnk2(o);                   /* UDE_X_OPP_UNK2 */
+    R[58] = BtlMember_GetActiveGauge(c) != NULL ? BtlMember_GetActiveGauge(c)->ki : 0;   /* UDE_X_MY_KI */
+    R[59] = ur_reaction(act);                      /* UDE_X_REACTION */
+    R[60] = ur_reaction(oa);                       /* UDE_X_OPP_REACTION */
+    R[61] = melee ? ur_guard_direction(o) : 0;     /* UDE_X_GUARD_DIR (raw pad 0x10 up / 0x40 down) */
+    R[62] = melee ? ur_stun_guard(c, o, attackFlags, back) : -1;   /* UDE_X_STUN_DIR */
+    R[63] = BtlAct_IsTechniqueId(act) || ur_skill_action(act);    /* UDE_X_MY_TECH */
+    R[64] = inc.hit != NULL && inc.eta <= until;   /* UDE_X_PROJ_FIRST */
+    R[65] = dist < range * 2.0f;                   /* UDE_X_D_LT_R2 */
+    R[66] = dist < range * 4.0f;                   /* UDE_X_D_LT_R4 */
+    R[67] = dist < 100.0f;                         /* UDE_X_D_LT_100 */
+    R[68] = dist < 140.0f;                         /* UDE_X_D_LT_140 */
+    R[69] = dist < range;                          /* UDE_X_D_LT_R */
+    R[70] = ur_floor100(until);                    /* UDE_X_UNTIL_FLOOR100: for the strict "<" tests */
+    R[0] = 1;                                      /* UDE_X_OK */
+    return 1;
+}
 #endif

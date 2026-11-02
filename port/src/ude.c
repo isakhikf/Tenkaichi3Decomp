@@ -12,14 +12,18 @@
 static const char *const kReason[UDE_R_COUNT] = {
     "none", "disabled", "online", "replay", "cpu_side", "not_fighting", "time_stop", "bad_snapshot", "no_threat",
     "manual", "moving", "busy", "out_of_reach", "behind", "no_ki", "hold_cap", "not_accepted", "cooldown",
-    "request_pending", "wait_timing", "window_cooling", "not_evadable"
+    "request_pending", "wait_timing", "window_cooling", "not_evadable", "manual_action", "recipe_declined", "recipe_edge"
 };
 static const char *const kThreat[UDE_T_COUNT] = { "none", "melee", "rush", "technique", "skill", "clash", "blast", "throw" };
 static const char *const kResp[5] = { "none", "hold", "tap", "press_hold", "recover" };
 
 const char *Ude_ReasonName(int r) { return (r >= 0 && r < UDE_R_COUNT) ? kReason[r] : "?"; }
 const char *Ude_ThreatName(int t) { return (t >= 0 && t < UDE_T_COUNT) ? kThreat[t] : "?"; }
-const char *Ude_ResponseName(int r) { return (r >= 0 && r < 5) ? kResp[r] : "?"; }
+const char *Ude_ResponseName(int r) {
+    if (r == UDE_RESP_RECIPE) return "recipe_guard";
+    if (r > UDE_RESP_RECIPE && r < UDE_RESP_RECIPE + UDE_K_COUNT) return UdeRecipe_KindName(r - UDE_RESP_RECIPE);
+    return (r >= 0 && r < 5) ? kResp[r] : "?";
+}
 
 void Ude_DefaultConfig(UdeConfig *c) {
     c->enabled = 1;
@@ -38,6 +42,9 @@ void Ude_DefaultConfig(UdeConfig *c) {
     c->tap_lead = 1;
     c->request_guard = 1;
     c->recover = 0;
+    c->recipes = 0;          /* v5 features are opt-in in the core: the v4 tests run the v4 engine unchanged */
+    c->manual_claim = 0;
+    UdeRecipe_DefaultConfig(&c->rcfg);
 }
 
 void Ude_Reset(UdeState *s) {
@@ -46,6 +53,8 @@ void Ude_Reset(UdeState *s) {
     for (i = 0; i < sizeof(*s); i++) p[i] = 0;
     s->last_manual = 1000;
     s->since_press = 1000;
+    UdeRecipe_Reset(&s->rs);
+    s->last_rresult = -1;
 }
 
 static int in_range(int a) { return a >= 0 && a < UDE_ACTION_COUNT; }
@@ -127,7 +136,10 @@ int Ude_EtaFrames(const UdeSnapshot *s, int threat) {
 
 static unsigned finish(UdeState *s, UdeDecision *out, unsigned buttons, int injected, int threat, int reason,
                        int resp, int conf) {
-    int edge = injected && !s->last_injected;
+    int edge = resp >= UDE_RESP_RECIPE ? (injected && s->recipe_edge) : (injected && !s->last_injected);
+    /* v5: the recipe engine compares its next packet with what the game really records now */
+    if (!s->recipe_ran) UdeRecipe_Cancel(&s->rs);
+    UdeRecipe_Commit(&s->rs, UdeRecipe_FromBattle(buttons));
     s->last_reason = injected ? UDE_R_NONE : reason;
     s->last_threat = threat;
     if (edge) s->since_press = 0;
@@ -145,6 +157,10 @@ static unsigned finish(UdeState *s, UdeDecision *out, unsigned buttons, int inje
         out->response = resp;
         out->confidence = conf;
         out->press_edge = edge;
+        out->origin = resp >= UDE_RESP_RECIPE ? UDE_O_RECIPE : resp == UDE_RESP_TAP ? UDE_O_V4_TAP :
+                      resp == UDE_RESP_RECOVER ? UDE_O_RECOVER : injected ? UDE_O_V4_HOLD : UDE_O_NONE;
+        out->recipe_kind = resp > UDE_RESP_RECIPE ? resp - UDE_RESP_RECIPE : 0;
+        out->recipe_result = s->recipe_ran ? s->last_rresult : -1;
     }
     return buttons;
 }
@@ -169,11 +185,21 @@ unsigned Ude_Step(UdeState *s, const UdeConfig *c, const UdeSnapshot *snap, unsi
     int threat, conf, eta, behind;
 
     s->stats.frames++;
+    s->recipe_ran = 0;
+    s->recipe_edge = 0;
     if (s->last_manual < 1000) s->last_manual++;
     if (s->since_press < 1000) s->since_press++;
     if (manual) {
         if (s->holding || s->tap_left) s->stats.manual_overrides++;
         s->last_manual = 0;
+        s->claim = c->manual_claim;
+        {   /* Codex reset() on physical input: the whole plan goes, what the game recorded stays */
+            unsigned prev = s->rs.prev_out;
+            int valid = s->rs.out_valid;
+            UdeRecipe_Reset(&s->rs);
+            s->rs.prev_out = prev;
+            s->rs.out_valid = valid;
+        }
     }
 
     /* ---- Safety controller */
@@ -182,8 +208,13 @@ unsigned Ude_Step(UdeState *s, const UdeConfig *c, const UdeSnapshot *snap, unsi
     if (snap->online) { s->mode = UDE_SUSPENDED; return release(s, out, physical, 0, UDE_R_ONLINE); }
     if (snap->replay) { s->mode = UDE_SUSPENDED; return release(s, out, physical, 0, UDE_R_REPLAY); }
     if (snap->cpu_side) { s->mode = UDE_SUSPENDED; return release(s, out, physical, 0, UDE_R_CPU_SIDE); }
-    if (!snap->fighting) { s->mode = UDE_ON; return release(s, out, physical, 0, UDE_R_NOT_FIGHTING); }
-    if (snap->time_stopped) { s->mode = UDE_ON; return release(s, out, physical, 0, UDE_R_TIME_STOP); }
+    if (!snap->fighting || snap->time_stopped) {   /* the game records an empty word for an inactive fighter */
+        unsigned r;
+        s->mode = UDE_ON;
+        r = release(s, out, physical, 0, !snap->fighting ? UDE_R_NOT_FIGHTING : UDE_R_TIME_STOP);
+        UdeRecipe_Commit(&s->rs, 0);
+        return r;
+    }
     if (!in_range(snap->my_action) || !in_range(snap->opp_action)) {
         s->mode = UDE_SUSPENDED; return release(s, out, physical, 0, UDE_R_BAD_SNAPSHOT);
     }
@@ -200,6 +231,17 @@ unsigned Ude_Step(UdeState *s, const UdeConfig *c, const UdeSnapshot *snap, unsi
         return release(s, out, physical, threat > 0 ? threat : 0, UDE_R_MANUAL);
     }
     if (physical & UDE_B_GUARD) return release(s, out, physical, threat > 0 ? threat : 0, UDE_R_MANUAL);
+    /* v5 (Codex R8 ManualClaim): an action the player started keeps the fighter until it ends in a neutral state
+       (stand 0x0B, move 0x0D..0x0F, guard 0x38) or in a reaction */
+    if (c->manual_claim && s->claim) {
+        int a = snap->my_action;
+        int neutral = a == 0xB || a == 0xD || a == 0xE || a == 0xF || a == 0x38 || a == 0xBD || (a >= 0xC0 && a <= 0xE0);
+        if (!neutral) {
+            s->stats.claims++;
+            return release(s, out, physical, threat > 0 ? threat : 0, UDE_R_MANUAL_ACTION);
+        }
+        s->claim = 0;
+    }
     if (!c->allow_while_moving && (physical & UDE_B_DIR_MASK)) {
         return release(s, out, physical, threat > 0 ? threat : 0, UDE_R_MOVING);
     }
@@ -231,6 +273,44 @@ unsigned Ude_Step(UdeState *s, const UdeConfig *c, const UdeSnapshot *snap, unsi
     if (s->tap_left > 0) {
         s->tap_left--;
         return finish(s, out, physical | UDE_B_GUARD, 1, threat > 0 ? threat : 0, UDE_R_NONE, UDE_RESP_TAP, conf);
+    }
+
+    /* ---- v5: the Codex R8 recipes decide first (single arbiter: one packet per update, never with physical input) */
+    if (c->recipes && snap->have_recipe) {
+        UdeRecipeOut ro;
+        int rr;
+        s->recipe_ran = 1;
+        rr = UdeRecipe_Step(&s->rs, &c->rcfg, snap->recipe, s->stats.frames, &ro);
+        s->last_rresult = rr;
+        if (rr != UDE_RR_NO_THREAT) {
+            unsigned add = UdeRecipe_ToBattle(ro.raw);
+            int resp = UDE_RESP_RECIPE + (ro.kind > 0 ? ro.kind : 0);
+            int t = threat > 0 ? threat : 0;
+            s->tap_left = 0;
+            s->stats.recipe_frames++;
+            s->recipe_edge = ro.fired;
+            if (ro.fired && ro.kind > 0 && ro.kind < UDE_K_COUNT) {
+                s->stats.recipe_fires[ro.kind]++;
+                s->stats.interventions++;
+            }
+            if (add) {
+                if (rr == UDE_RR_GUARD && (add & UDE_B_GUARD)) {   /* a held guard keeps the v4 time limit */
+                    if (s->holding >= c->hold_cap) {
+                        s->cooldown = c->cooldown;
+                        UdeRecipe_Cancel(&s->rs);
+                        return release(s, out, physical, t, UDE_R_HOLD_CAP);
+                    }
+                    s->holding++;
+                } else {
+                    s->holding = 0;
+                }
+                s->tail = 0;
+                return finish(s, out, physical | add, 1, t, UDE_R_NONE, resp, conf);
+            }
+            s->holding = 0;
+            s->tail = 0;
+            return finish(s, out, physical, 0, t, rr == UDE_RR_DECLINED ? UDE_R_RECIPE_DECLINED : UDE_R_RECIPE_EDGE, resp, conf);
+        }
     }
 
     /* ---- Defense policy */

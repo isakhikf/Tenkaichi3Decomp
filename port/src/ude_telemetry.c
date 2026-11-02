@@ -127,6 +127,11 @@ void UdeTel_Frame(UdeTelemetry *t, const UdeSnapshot *s, const UdeTelIn *in, con
     if (t->press_pending) {
         int acc = s->win[UDE_W_EVADE] > 0 || s->win[UDE_W_BLAST] > 0 || s->win[UDE_W_THROW] > 0 || s->win[UDE_W_RUSH] > 0 ||
                   Ude_IsGuardAction(s->my_action);
+        if (t->press_resp >= UDE_RESP_RECIPE) {   /* v5 recipes: the counter / perfect-deflect windows, Sway 0x67, VanishStep 0x20..0x23 */
+            int a = s->my_action;
+            acc = acc || s->win[UDE_W_COUNTER] > 0 || s->win[UDE_W_PERFECT] > 0 || a == 0x67 || a == 0x3B || a == 0x3D ||
+                  (a >= 0x20 && a <= 0x23);
+        }
         char det[96];
         snprintf(det, sizeof det, "threat=%s w=%d/%d/%d/%d", Ude_ThreatName(t->press_threat), s->win[0], s->win[1], s->win[4], s->win[5]);
         event(t, "PRESS", s, in, 0, Ude_ResponseName(t->press_resp), 1, acc, acc ? "accepted" : "not_accepted", det);
@@ -137,6 +142,12 @@ void UdeTel_Frame(UdeTelemetry *t, const UdeSnapshot *s, const UdeTelIn *in, con
     if (in->reaction != 1 || (in->evade_flags & 0x3F) || (in->guard_flags & 0x7F) || hp_delta < 0 || in->opp_broken) {
         int age = in->sim_frame - t->last_press_frame;
         const char *def = age <= 6 ? Ude_ResponseName(t->last_press_resp) : t->prev_injected ? "hold" : "none";
+        /* v5: a defence the player pressed himself is his, not the engine's */
+        if (t->last_manual_frame > 0 && in->sim_frame - t->last_manual_frame <= 6 && (age > 6 || t->last_manual_frame > t->last_press_frame)) {
+            def = "manual";
+            age = 99;
+            t->manual_contacts++;
+        }
         const char *res = result_of(in, hp_delta);
         int acc = strcmp(res, "hit") != 0 && strcmp(res, "none") != 0;
         /* the collision happened during the previous frame: its decision is the one that counts */
@@ -144,6 +155,7 @@ void UdeTel_Frame(UdeTelemetry *t, const UdeSnapshot *s, const UdeTelIn *in, con
               t->prev_injected ? Ude_ResponseName(t->prev_response) : Ude_ReasonName(t->prev_reason));
         t->contacts++;
     }
+    if (manual) t->last_manual_frame = in->sim_frame;
     /* conflicts with the player's commands */
     if (manual && t->prev_injected) {
         event(t, "CONFLICT", s, in, 0, "-", -1, -1, "manual_over_injection", "player pressed while guard was being sent; engine released");
