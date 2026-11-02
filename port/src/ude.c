@@ -276,11 +276,12 @@ unsigned Ude_Step(UdeState *s, const UdeConfig *c, const UdeSnapshot *snap, unsi
     }
 
     /* ---- v5: the Codex R8 recipes decide first (single arbiter: one packet per update, never with physical input) */
-    if (c->recipes && snap->have_recipe) {
+    /* (ude_min_ki applies to the recipes too: VanishStep spends the player's ki) */
+    if (c->recipes && snap->have_recipe && snap->my_ki >= c->min_ki) {
         UdeRecipeOut ro;
         int rr;
         s->recipe_ran = 1;
-        rr = UdeRecipe_Step(&s->rs, &c->rcfg, snap->recipe, s->stats.frames, &ro);
+        rr = UdeRecipe_Step(&s->rs, &c->rcfg, snap->recipe, s->stats.frames * 2u, &ro);   /* blanks: 2 per update */
         s->last_rresult = rr;
         if (rr != UDE_RR_NO_THREAT) {
             unsigned add = UdeRecipe_ToBattle(ro.raw);

@@ -1498,7 +1498,13 @@ s32 BtlColl_IsGuarding(HitChr *chr) {
  *   23  knock-away recovery possible for this character: parameter flags2 & 0x40 and own flag 0x1D down
  *       (BtlAct_BlowAwayHandler, btl_act_a.c: face-button presses counted towards action 0xD7)
  *   24  BtlChar_IsFree(me): the precondition of guard, evasion and throw break in the hit tests
+ *   25  (Hybrid v5) native defence outcomes of the last collision step, read before BtlChar_BeginFrame clears them:
+ *       1 = own fx bit 0x2E (BtlColl_TryDeflect / TryReflect accepted the blast), 2 = own fx bit 0x37 (TryAbsorb),
+ *       4 = own flag 0x6B (perfect deflect), 8 = opponent flag 0x6F (BtlHit_ApplyGuard results 6..8: the strike was
+ *       countered, 8 = the UP + RUSH level counter), 16 = own flag 0x52 (reflect action 0x3C), 32 = own action 0x67
+ *       (Sonic Sway), 64 = own action 0x20..0x23 (VanishStep), 128 = own action 0x3B / 0x3D (deflect stance)
  */
+extern s32 BtlChar_TestFxBit(HitChr *chr, s32 n);   /* src/battle/btl_char_fx.c: this frame's effect request bits */
 extern s32 BtlAct_GetRequested(HitChr *chr);
 extern f32 BtlCharApi_GetAltitude(s32 objId);
 extern s32 BtlCharApi_GetObjIdOfPlayer(s32 player);
@@ -1553,6 +1559,12 @@ s32 BtlHit_PortUdeQuery(s32 player, s32 what) {
     case 22: return (s32)(BtlCharApi_GetAltitude(BtlCharApi_GetObjIdOfPlayer(player)) * 10.0f);
     case 23: return (BtlParam_GetFlags2(me) & 0x40) != 0 && !BtlChar_TestFlag(me, 0x1D);
     case 24: return BtlChar_IsFree(me);
+    case 25: {
+        s32 a = BtlAct_GetCurrent(me);
+        return (BtlChar_TestFxBit(me, 0x2E) ? 1 : 0) | (BtlChar_TestFxBit(me, 0x37) ? 2 : 0) | (BtlChar_TestFlag(me, 0x6B) ? 4 : 0) |
+               (BtlChar_TestFlag(opp, 0x6F) ? 8 : 0) | (BtlChar_TestFlag(me, 0x52) ? 16 : 0) | (a == 0x67 ? 32 : 0) |
+               ((a >= 0x20 && a <= 0x23) ? 64 : 0) | ((a == 0x3B || a == 0x3D) ? 128 : 0);
+    }
     }
     return -999;
 }

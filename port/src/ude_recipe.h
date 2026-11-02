@@ -117,7 +117,9 @@ void UdeRecipe_DefaultConfig(UdeRecipeConfig *c);
 void UdeRecipe_Reset(UdeRecipeState *s);
 /* Drop the current plan (an update on which the engine may not act: the player's input, a pending request...). */
 void UdeRecipe_Cancel(UdeRecipeState *s);
-/* One update. `R` is the snapshot (UDE_X_COUNT ints), `frame` the update counter. */
+/* One update. `R` is the snapshot (UDE_X_COUNT ints). `frame` is the Codex clock: the vblank counter, which advances
+   by 2 per 30 Hz game update (Codex reads gPortVBlanks; its gaps 2 / 6 / 8 / 10 / 12, plan 24, ki deadline 12 and the
+   `frame & 2` side alternation are in blanks). Ude_Step passes 2 x its update count. */
 int UdeRecipe_Step(UdeRecipeState *s, const UdeRecipeConfig *c, const int *R, unsigned frame, UdeRecipeOut *out);
 /* raw packet -> battle word (BTLB_* of include/battle/btl_input.h): GUARD 0x1 (+ANY_FACE), DASH 0x2, BLAST 0x4
    (+BLAST2), RUSH 0x8, UP 0x10, DOWN 0x20, LEFT 0x40, RIGHT 0x80, CHARGE 0x200. */

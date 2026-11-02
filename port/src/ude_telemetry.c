@@ -54,6 +54,11 @@ int UdeTel_Open(UdeTelemetry *t, const char *dir, int release) {
 }
 
 static const char *result_of(const UdeTelIn *in, int hp_delta) {
+    /* v5: the native outcomes first (query 25): a deflected / reflected / absorbed blast or a countered strike is the
+       defence the game executed, even when a guard flag is also up */
+    if (in->outcome & 8) return "countered";
+    if (in->outcome & 1) return (in->outcome & 16) ? "reflected" : "deflected";
+    if (in->outcome & 2) return "absorbed";
     if (in->evade_flags & 0x1F) return "evaded";
     if (in->guard_flags & 32) return "broken";
     if (in->guard_flags & 64) return "guard_crushed";
@@ -139,7 +144,8 @@ void UdeTel_Frame(UdeTelemetry *t, const UdeSnapshot *s, const UdeTelIn *in, con
         t->press_pending = 0;
     }
     /* a contact of the previous frame's hit step */
-    if (in->reaction != 1 || (in->evade_flags & 0x3F) || (in->guard_flags & 0x7F) || hp_delta < 0 || in->opp_broken) {
+    if (in->reaction != 1 || (in->evade_flags & 0x3F) || (in->guard_flags & 0x7F) || hp_delta < 0 || in->opp_broken ||
+        (in->outcome & 0xF)) {   /* v5: a deflect leaves no reaction, no damage and no guard flag: it was invisible */
         int age = in->sim_frame - t->last_press_frame;
         const char *def = age <= 6 ? Ude_ResponseName(t->last_press_resp) : t->prev_injected ? "hold" : "none";
         /* v5: a defence the player pressed himself is his, not the engine's */

@@ -233,6 +233,8 @@ unsigned int PortUde_Filter(int player, int active, unsigned int buttons) {
             in.opp_yaw1000 = BtlHit_PortUdeQuery(player, 20);
             in.opp_broken = BtlHit_PortUdeQuery(player, 21);
             in.altitude10 = BtlHit_PortUdeQuery(player, 22);
+            in.outcome = BtlHit_PortUdeQuery(player, 25);
+            if (in.outcome < 0) in.outcome = 0;
         }
         UdeTel_Frame(&sTel, &s, &in, &d, buttons, ns);
         if (!active) UdeTel_Flush(&sTel);   /* out of the fight: writing costs no fight frame */

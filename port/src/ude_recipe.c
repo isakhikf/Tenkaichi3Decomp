@@ -25,6 +25,13 @@
 #ifndef UDE_VANISH_RELEASE
 #define UDE_VANISH_RELEASE 1
 #endif
+/* After the released update(s) of a pulse, the press goes out on the next update. Codex sends one more empty packet
+   (its pulse branch only arms counterHold), which online is absorbed by the input delay its z2 clock adds (prepare = 2
+   blanks); off-line it would press one update after the impact the plan was made for (Z with a held edge: planned at
+   n == 2, pressed at n == 0). UDE_CODEX_PULSE = 1 restores the Codex sequence (the differential test uses it). */
+#ifndef UDE_CODEX_PULSE
+#define UDE_CODEX_PULSE 0
+#endif
 #define X(i) (R[UDE_X_##i])
 
 static const char *const kKind[UDE_K_COUNT] = {
@@ -296,6 +303,10 @@ int UdeRecipe_Step(UdeRecipeState *s, const UdeRecipeConfig *c, const int *R, un
         if (!stopped && !--s->pulse_pending) {
             s->counter_kind = s->pending_kind;
             s->counter_hold = 2;
+#if !UDE_CODEX_PULSE
+            b = packet(s->counter_kind);          /* the press itself, now: the update after the release */
+            --s->counter_hold;
+#endif
         }
         return done(s, o, UDE_RR_PACKET, b, s->pending_kind, fired);
     }

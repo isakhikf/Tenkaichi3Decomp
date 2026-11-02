@@ -7,6 +7,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <time.h>
 #include "ude.h"
 
 static int fails, total;
@@ -224,6 +225,19 @@ int main(void) {
     run_init(&r);
     for (n = 6; n >= 1; n--) { base(&s); blast(&s, n * 100, UDE_INC_REDIRECT); s.recipe[UDE_X_CAPS] = 0x20; s.recipe[UDE_X_PFLAGS] = 2; step(&r, &s, 0, &d); }
     emit("v5_absorber_side_dash", r.fired_k[UDE_K_SIDESTEP] == 1 && r.cond_hits[4] == 1, "character with parameter flag 2 against a non-absorbable blast: dash aside (recipe 6)");
+    /* the same absorbing character against an absorbable blast: GUARD + side (the game queues the absorb stance 0x3D
+       for parameter flag 2, btl_act_h_b.c:2286), never a dash */
+    run_init(&r);
+    for (n = 6; n >= 1; n--) { base(&s); blast(&s, n * 100, UDE_INC_REDIRECT | UDE_INC_ABSORB); s.recipe[UDE_X_CAPS] = 0x20; s.recipe[UDE_X_PFLAGS] = 2; step(&r, &s, 0, &d); }
+    emit("v5_absorber_absorb", r.fired_k[UDE_K_DEFLECT] >= 1 && r.fired_k[UDE_K_SIDESTEP] == 0 && r.cond_hits[3] >= 1, "absorbing character, absorbable blast: GUARD + side (stance 0x3D), never a dash");
+    /* a character without the deflect capability (parameter flags2 0x20 off): no deflect press (impossible) */
+    run_init(&r);
+    for (n = 6; n >= 1; n--) { base(&s); blast(&s, n * 100, UDE_INC_REDIRECT | UDE_INC_ABSORB); s.recipe[UDE_X_CAPS] = 0; step(&r, &s, 0, &d); }
+    emit("v5_no_deflect_capability", r.fired_k[UDE_K_DEFLECT] == 0, "no flags2 0x20: no deflect press; the blast is guarded or dodged");
+    /* a super technique's shot (not redirectable): never deflect */
+    run_init(&r);
+    for (n = 6; n >= 1; n--) { base(&s); blast(&s, n * 100, UDE_INC_TECH | UDE_INC_EVADABLE); s.recipe[UDE_X_CAPS] = 0x20; step(&r, &s, 0, &d); }
+    emit("v5_technique_not_deflected", r.fired_k[UDE_K_DEFLECT] == 0 && r.fired_k[UDE_K_SIDESTEP] == 1, "super technique shot (not redirectable): no deflect; dash aside 4 updates out (Codex recipe 6)");
     run_init(&r);
     for (n = 6; n >= 1; n--) { base(&s); blast(&s, n * 100, UDE_INC_BEHIND); step(&r, &s, 0, &d); }
     emit("v5_blast_behind_side_dash", r.fired_k[UDE_K_SIDESTEP] == 1 && r.fired_k[UDE_K_DEFLECT] == 0, "blast from behind: never deflect (impossible), dash aside");
@@ -267,6 +281,114 @@ int main(void) {
         snprintf(det, sizeof det, "Z presses over two attacks: %d", zs);
         emit("v5_combo_two_attacks_two_z", zs == 2, det);
     }
+
+    /* off-line pulse timing: a Z planned while RUSH + UP is still held from the previous packet releases for one
+       update (n == 2) and presses on the impact update (n == 1), never after it */
+    run_init(&r);
+    {
+        int z_at = -1, f;
+        for (f = 0; f < 3; f++) {
+            base(&s);
+            if (f == 0) melee(&s, 1, 3);
+            else { melee(&s, 3 - f, 3); s.recipe[UDE_X_OPP_ANIM] = 0x99; s.recipe[UDE_X_FIRST_EVENT] = 40; }
+            out = step(&r, &s, 0, &d);
+            if (f > 0 && cond38(out, r.st.rs.out_valid ? 0 : 0) && d.press_edge && d.recipe_kind == UDE_K_ZCOUNTER) z_at = 3 - f;
+        }
+        snprintf(det, sizeof det, "second Z pressed at n = %d (impact update = 1)", z_at);
+        emit("v5_z_after_held_edge_on_time", z_at == 1, det);
+    }
+    /* Sway on a first attack (ki 50000), then the ki falls under the Sway's 1000: the Z-Counter on the next attack */
+    run_init(&r);
+    {
+        int f, sway = 0, z = 0;
+        for (f = 0; f < 24; f++) {
+            int a = f / 12, n2 = 12 - (f % 12);
+            base(&s); melee(&s, n2 > 6 ? 6 : n2, 3); s.recipe[UDE_X_CAPS] = 0x80; s.recipe[UDE_X_OPP_ANIM] = 0xA0 + a; s.recipe[UDE_X_FIRST_EVENT] = 30 + a;
+            if (a == 1) s.recipe[UDE_X_MY_KI] = s.my_ki = 900;
+            out = step(&r, &s, 0, &d);
+            sway += d.press_edge && d.recipe_kind == UDE_K_SWAY;
+            z += d.press_edge && d.recipe_kind == UDE_K_ZCOUNTER;
+        }
+        snprintf(det, sizeof det, "Sway %d then Z %d", sway, z);
+        emit("v5_combo_sway_then_z", sway == 1 && z == 1, det);
+    }
+    /* Z on a strike, then a blast from behind with the VanishStep available */
+    run_init(&r);
+    {
+        int f, z = 0, v = 0;
+        for (f = 0; f < 20; f++) {
+            base(&s);
+            if (f < 8) melee(&s, 8 - f > 6 ? 6 : 8 - f, 3);
+            else { blast(&s, (20 - f) * 100, UDE_INC_BEHIND); s.recipe[UDE_X_VANISH] = 1; s.recipe[UDE_X_BACK] = s.behind = 1; }
+            out = step(&r, &s, 0, &d);
+            z += d.press_edge && d.recipe_kind == UDE_K_ZCOUNTER;
+            v += d.press_edge && d.recipe_kind == UDE_K_VANISH;
+        }
+        snprintf(det, sizeof det, "Z %d, then VanishStep %d", z, v);
+        emit("v5_combo_z_then_vanish", z == 1 && v == 1, det);
+    }
+    /* a second blast from behind whose whole window falls within 5 updates of the first VanishStep: one VanishStep
+       (Codex: no new pulse within 10 blanks = 5 updates) */
+    run_init(&r);
+    {
+        int f, v = 0;
+        for (f = 0; f < 6; f++) {   /* the second blast hits on update 6: it is gone after it */
+            base(&s); blast(&s, (f < 2 ? 4 - f : 6 - f) * 100, UDE_INC_BEHIND); s.recipe[UDE_X_VANISH] = 1;
+            out = step(&r, &s, 0, &d);
+            v += d.press_edge && d.recipe_kind == UDE_K_VANISH;
+        }
+        snprintf(det, sizeof det, "VanishStep presses %d", v);
+        emit("v5_vanish_spacing", v == 1, det);
+    }
+    /* the player presses on the update of the planned release: the plan goes; no stale Z after the grace */
+    run_init(&r);
+    {
+        int f, late = 0, z = 0;
+        for (f = 0; f < 14; f++) {
+            base(&s); melee(&s, 7 - f, 3);
+            if (f >= 7) { base(&s); }
+            out = step(&r, &s, f == 4 ? B_GUARD : 0, &d);
+            z += d.press_edge && d.recipe_kind == UDE_K_ZCOUNTER;
+            if (f > 4 && d.injected && d.recipe_kind == UDE_K_ZCOUNTER) late++;
+        }
+        snprintf(det, sizeof det, "Z after the player's own guard press: %d", late);
+        emit("v5_manual_drops_plan", late == 0, det);
+    }
+    /* Etapa C: the native evasion of a strike has no facing test (BtlHit_CheckDodge): it is also planned from behind */
+    run_init(&r);
+    for (n = 5; n >= 1; n--) { base(&s); melee(&s, n, 3); s.recipe[UDE_X_BACK] = s.behind = 1; s.recipe[UDE_X_W1070] = -12; step(&r, &s, 0, &d); }
+    emit("v5_evade_from_behind", r.fired_k[UDE_K_EVADE] == 1 && r.fired_k[UDE_K_ZCOUNTER] == 0, "strike from behind, Z window cooling: evade press only");
+    /* a strike that will not reach (no impact in reach): nothing */
+    run_init(&r);
+    for (n = 5; n >= 1; n--) { base(&s); melee(&s, n, 3); s.recipe[UDE_X_MELEE] = 0; s.recipe[UDE_X_UNTIL100] = s.recipe[UDE_X_UNTIL_FLOOR100] = UDE_X_NONE100; s.close = 0; step(&r, &s, 0, &d); }
+    emit("v5_out_of_reach_nothing", r.fired_k[UDE_K_EVADE] == 0 && r.fired_k[UDE_K_ZCOUNTER] == 0, "attack out of reach: no recipe press");
+    /* no stuck buttons: after any threat, the word is empty again within 4 idle updates (v4 release tail 3) */
+    {
+        unsigned rng2 = 77u;
+        int seq, stuck = 0;
+        for (seq = 0; seq < 3000; seq++) {
+            int f, len = 2 + (int)(xs(&rng2) % 12);
+            run_init(&r);
+            for (f = 0; f < len + 6; f++) {
+                base(&s);
+                if (f < len) switch (xs(&rng2) % 3) {
+                    case 0: melee(&s, (int)(xs(&rng2) % 6), 3); break;
+                    case 1: blast(&s, (int)(xs(&rng2) % 800), (int)(xs(&rng2) % 256) & ~1); s.recipe[UDE_X_CAPS] = 0x20; break;
+                    default: s.recipe[UDE_X_THROWING] = 1; s.recipe[UDE_X_ATK] = 0x55; s.recipe[UDE_X_D_LT_R2] = 1;
+                             s.recipe[UDE_X_UNTIL100] = s.recipe[UDE_X_UNTIL_FLOOR100] = (int)(xs(&rng2) % 4) * 100; break;
+                }
+                out = step(&r, &s, 0, &d);
+                if (f >= len + 4 && out) stuck++;
+            }
+        }
+        snprintf(det, sizeof det, "3000 threat sequences: word not empty 4 updates after the threat in %d", stuck);
+        emit("v5_no_stuck_buttons", stuck == 0, det);
+    }
+
+    /* ude_min_ki: below it, no recipe either (the player's ki stays his) */
+    run_init(&r); r.c.min_ki = 60000;
+    for (n = 6; n >= 1; n--) { base(&s); blast(&s, n * 100, UDE_INC_BEHIND); s.recipe[UDE_X_VANISH] = 1; step(&r, &s, 0, &d); }
+    emit("v5_min_ki_respected", r.fired_k[UDE_K_VANISH] == 0 && r.st.stats.recipe_frames == 0, "ki 50000 under ude_min_ki 60000: no VanishStep, no recipe");
 
     /* ---------------- arbitration */
     run_init(&r);
@@ -365,6 +487,23 @@ int main(void) {
         snprintf(det, sizeof det, "frames %ld, recipe presses %ld: cleared physical %ld, manual mixed %ld, illegal bits %ld, press into a cooling window %ld",
                  frames, presses, bad_clear, bad_manual, bad_bits, bad_mash);
         emit("v5_property_invariants", bad_clear == 0 && bad_manual == 0 && bad_bits == 0 && bad_mash == 0 && presses > 0, det);
+    }
+    /* performance (host only; the game PC's figure comes from the SUMMARY lines of ude_log=1) */
+    {
+        struct timespec a, b;
+        long it, N = 2000000;
+        double ns;
+        run_init(&r);
+        clock_gettime(CLOCK_MONOTONIC, &a);
+        for (it = 0; it < N; it++) {
+            base(&s);
+            if (it & 1) blast(&s, (int)(it % 9) * 100, UDE_INC_REDIRECT); else melee(&s, (int)(it % 7), 3);
+            step(&r, &s, 0, &d);
+        }
+        clock_gettime(CLOCK_MONOTONIC, &b);
+        ns = ((double)(b.tv_sec - a.tv_sec) * 1e9 + (double)(b.tv_nsec - a.tv_nsec)) / (double)N;
+        snprintf(det, sizeof det, "Ude_Step with recipes: %.0f ns per update on this host (snapshot fill included; budget 33 ms)", ns);
+        emit("v5_perf_step", ns < 5000.0, det);
     }
     fprintf(stderr, "v5: %d tests, %d failed\n", total, fails);
     return fails;

@@ -28,6 +28,7 @@ typedef struct UdeTelIn {          /* per-frame values beyond the engine snapsho
     int reaction;                  /* own reaction id after the last hit step, 1 = none */
     int evade_flags, guard_flags;  /* BtlHit_PortUdeQuery 17 / 18 */
     int opp_broken;                /* opponent flag 0x7A */
+    int outcome;                   /* v5: BtlHit_PortUdeQuery 25 (deflect / reflect / absorb / counter / stances) */
 } UdeTelIn;
 
 typedef struct UdeLineBuf {
