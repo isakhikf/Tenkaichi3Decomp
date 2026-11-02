@@ -1502,7 +1502,8 @@ s32 BtlColl_IsGuarding(HitChr *chr) {
  *       1 = own fx bit 0x2E (BtlColl_TryDeflect / TryReflect accepted the blast), 2 = own fx bit 0x37 (TryAbsorb),
  *       4 = own flag 0x6B (perfect deflect), 8 = opponent flag 0x6F (BtlHit_ApplyGuard results 6..8: the strike was
  *       countered, 8 = the UP + RUSH level counter), 16 = own flag 0x52 (reflect action 0x3C), 32 = own action 0x67
- *       (Sonic Sway), 64 = own action 0x20..0x23 (VanishStep), 128 = own action 0x3B / 0x3D (deflect stance)
+ *       (Sonic Sway), 64 = own action 0x20..0x23 (VanishStep), 128 = own action 0x3B / 0x3D (deflect stance),
+ *       256 = own flag 0x7D (BtlHit_CheckDodge accepted the Sonic Sway, btl_char_hit.c:628)
  */
 extern s32 BtlChar_TestFxBit(HitChr *chr, s32 n);   /* src/battle/btl_char_fx.c: this frame's effect request bits */
 extern s32 BtlAct_GetRequested(HitChr *chr);
@@ -1563,7 +1564,7 @@ s32 BtlHit_PortUdeQuery(s32 player, s32 what) {
         s32 a = BtlAct_GetCurrent(me);
         return (BtlChar_TestFxBit(me, 0x2E) ? 1 : 0) | (BtlChar_TestFxBit(me, 0x37) ? 2 : 0) | (BtlChar_TestFlag(me, 0x6B) ? 4 : 0) |
                (BtlChar_TestFlag(opp, 0x6F) ? 8 : 0) | (BtlChar_TestFlag(me, 0x52) ? 16 : 0) | (a == 0x67 ? 32 : 0) |
-               ((a >= 0x20 && a <= 0x23) ? 64 : 0) | ((a == 0x3B || a == 0x3D) ? 128 : 0);
+               ((a >= 0x20 && a <= 0x23) ? 64 : 0) | ((a == 0x3B || a == 0x3D) ? 128 : 0) | (BtlChar_TestFlag(me, 0x7D) ? 256 : 0);
     }
     }
     return -999;

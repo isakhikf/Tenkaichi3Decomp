@@ -59,6 +59,8 @@ static const char *result_of(const UdeTelIn *in, int hp_delta) {
     if (in->outcome & 8) return "countered";
     if (in->outcome & 1) return (in->outcome & 16) ? "reflected" : "deflected";
     if (in->outcome & 2) return "absorbed";
+    if (in->outcome & 256) return "swayed";
+    if (in->outcome & 0x1000) return "vanished";        /* (set by UdeTel_Frame: first update of 0x20..0x23) */
     if (in->evade_flags & 0x1F) return "evaded";
     if (in->guard_flags & 32) return "broken";
     if (in->guard_flags & 64) return "guard_crushed";
@@ -144,8 +146,10 @@ void UdeTel_Frame(UdeTelemetry *t, const UdeSnapshot *s, const UdeTelIn *in, con
         t->press_pending = 0;
     }
     /* a contact of the previous frame's hit step */
+    UdeTelIn cur = *in;   /* v5: a VanishStep leaves no flag at all: the first update of its action is the event */
+    if ((cur.outcome & 64) && !(t->prev_my_action >= 0x20 && t->prev_my_action <= 0x23)) cur.outcome |= 0x1000;
     if (in->reaction != 1 || (in->evade_flags & 0x3F) || (in->guard_flags & 0x7F) || hp_delta < 0 || in->opp_broken ||
-        (in->outcome & 0xF)) {   /* v5: a deflect leaves no reaction, no damage and no guard flag: it was invisible */
+        (cur.outcome & (0xF | 0x100 | 0x1000))) {   /* v5: a deflect, a Sway, a VanishStep leave no reaction, damage or guard flag */
         int age = in->sim_frame - t->last_press_frame;
         const char *def = age <= 6 ? Ude_ResponseName(t->last_press_resp) : t->prev_injected ? "hold" : "none";
         /* v5: a defence the player pressed himself is his, not the engine's */
@@ -154,7 +158,7 @@ void UdeTel_Frame(UdeTelemetry *t, const UdeSnapshot *s, const UdeTelIn *in, con
             age = 99;
             t->manual_contacts++;
         }
-        const char *res = result_of(in, hp_delta);
+        const char *res = result_of(&cur, hp_delta);
         int acc = strcmp(res, "hit") != 0 && strcmp(res, "none") != 0;
         /* the collision happened during the previous frame: its decision is the one that counts */
         event(t, "CONTACT", s, in, hp_delta, def, age <= 6 ? age : -1, acc, res,

@@ -4,7 +4,9 @@
  *  - a recipe deflect followed by the native deflect outcome (query 25 bit 1) is a CONTACT "deflected", credited to
  *    the recipe (before v5 a deflect left no reaction, no damage and no guard flag: no CONTACT at all);
  *  - a counter outcome (query 25 bit 8) is "countered";
- *  - a defence the player pressed himself is credited to "manual", never to the engine.
+ *  - a defence the player pressed himself is credited to "manual", never to the engine;
+ *  - an accepted Sonic Sway (own flag 0x7D, bit 256) is "swayed"; a VanishStep (own action 0x20..0x23, no flag at all)
+ *    is one "vanished" contact on the first update of the action, not one per update.
  * Usage: test_telemetry_v5 <out_dir>
  */
 #include <stdio.h>
@@ -21,6 +23,7 @@ static void emit(const char *n, int ok, const char *d) {
 }
 
 static UdeTelemetry T;
+static int gMyAction = 0x38;   /* own action of the next frames (the VanishStep case) */
 
 static void snap(UdeSnapshot *s, int eta100) {
     int k;
@@ -51,6 +54,7 @@ static void frame(UdeState *st, UdeConfig *c, int f, int eta100, unsigned phys, 
     UdeDecision d;
     snap(&s, eta100);
     s.my_hp = hp;
+    s.my_action = s.recipe[UDE_X_MY_ACT] = gMyAction;
     memset(&in, 0, sizeof in);
     in.sim_frame = f; in.player = 0; in.my_chara = 21; in.opp_chara = 0; in.reaction = 1; in.distance10 = 300;
     in.outcome = outcome; in.guard_flags = guard;
@@ -63,7 +67,7 @@ int main(int argc, char **argv) {
     UdeState st;
     char path[512], line[1024], det[256];
     FILE *f;
-    int i, fr = 100, deflected = 0, deflect_credit = 0, countered = 0, manual = 0, manual_credit_engine = 0;
+    int i, fr = 100, deflected = 0, deflect_credit = 0, countered = 0, manual = 0, manual_credit_engine = 0, swayed = 0, vanished = 0;
 
     if (argc < 2 || !UdeTel_Open(&T, argv[1], 139)) { fprintf(stderr, "usage: test_telemetry_v5 <out_dir>\n"); return 3; }
     Ude_DefaultConfig(&c);
@@ -82,6 +86,14 @@ int main(int argc, char **argv) {
     for (i = 0; i < 6; i++) frame(&st, &c, fr++, (6 - i) * 100, i >= 2 ? 0x1u : 0, 0, 0, 30000);
     frame(&st, &c, fr++, -1, 0x1u, 0, 1, 30000);
     for (i = 0; i < 40; i++) frame(&st, &c, fr++, -1, 0, 0, 0, 30000);
+    /* 4. an accepted Sway */
+    frame(&st, &c, fr++, -1, 0, 256, 0, 30000);
+    for (i = 0; i < 40; i++) frame(&st, &c, fr++, -1, 0, 0, 0, 30000);
+    /* 5. a VanishStep lasting 4 updates */
+    gMyAction = 0x21;
+    for (i = 0; i < 4; i++) frame(&st, &c, fr++, -1, 0, 64, 0, 30000);
+    gMyAction = 0x38;
+    for (i = 0; i < 40; i++) frame(&st, &c, fr++, -1, 0, 0, 0, 30000);
     UdeTel_Close(&T);
 
     snprintf(path, sizeof path, "%s/ude_events.csv", argv[1]);
@@ -91,6 +103,8 @@ int main(int argc, char **argv) {
         if (strncmp(line, "CONTACT,", 8) != 0) continue;
         if (strstr(line, ",deflected,")) { deflected++; if (strstr(line, ",deflect,")) deflect_credit++; }
         if (strstr(line, ",countered,")) countered++;
+        if (strstr(line, ",swayed,")) swayed++;
+        if (strstr(line, ",vanished,")) vanished++;
         if (strstr(line, ",manual,")) manual++;
         if (strstr(line, ",guarded,") && !strstr(line, ",manual,")) manual_credit_engine++;
     }
@@ -101,6 +115,10 @@ int main(int argc, char **argv) {
     emit("v5_tel_counter_visible", countered == 1, det);
     snprintf(det, sizeof det, "player's own guard: manual %d, credited to the engine %d", manual, manual_credit_engine);
     emit("v5_tel_manual_not_credited", manual == 1 && manual_credit_engine == 0, det);
+    snprintf(det, sizeof det, "swayed contacts %d", swayed);
+    emit("v5_tel_sway_visible", swayed == 1, det);
+    snprintf(det, sizeof det, "vanished contacts %d over a 4-update VanishStep", vanished);
+    emit("v5_tel_vanish_once", vanished == 1, det);
     fprintf(stderr, "v5 telemetry: %d tests, %d failed\n", total, fails);
     return fails;
 }
