@@ -86,3 +86,9 @@ Correções por campo no JSON (valores antigos também estão preservados em aud
 Janelas e regras gerais: ver matriz em AUDIT.md; LOCKON explícito 0x4000, BLAST2 explícito 0x01000000, custos de postura e limiar/gasto de passo corrigidos. Reversão do banco inteiro: utilizar o anexo preservado em bt3_defesas_db.original.json.
 
 Não há commit, branch nova, merge, edição de SQLite original, modificação da C3, build x64 ou deploy nesta fase.
+
+## Fechamento do build final — 2026-11-09
+
+- `ude_db/BUILD.json`: identifica o build funcional `96cac4b`, run `42592500592`, hashes de artefato e executável, arquitetura Windows x64 e ausência de homologação. Evidência: artefatos/logs do workflow `ude-build`.
+- `ude_db/RELATORIO.md`, `LEIA-PRIMEIRO.md` e `PRESERVACAO.json`: registram resultados, uso do pacote separado e preservação dos 77 arquivos C3 e das três branches legadas. O commit de fechamento altera somente documentação; o binário corresponde ao commit funcional acima.
+- Reversão: remover estes documentos ou reverter somente o commit de fechamento. Não altera código compilado, dados do jogo ou a C3.

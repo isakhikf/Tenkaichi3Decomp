@@ -1,0 +1,33 @@
+{
+  "date_client": "2026-11-09",
+  "candidate": "UDE-DB1",
+  "repository": "isakhikf/Tenkaichi3Decomp",
+  "branch": "ude-db1",
+  "build_commit": "96cac4b26f6c9bf11d52b9517629b121e32c5cb1",
+  "run_id": 42592500592,
+  "run_url": "https://github.com/isakhikf/Tenkaichi3Decomp/actions/runs/42592500592",
+  "engine_tests": "success",
+  "windows_x64_build": "success",
+  "windows_archive_sha256": "5ce77c85d500bc9f90a98032cd82249c86e2ac6fa47adcc4c5ff79a3832e40b5",
+  "packaged_executable_sha256": "988500b783d06dd3a33c25b4d50b3f0ad5c6b1b27c0895e48363fa89393aec7c",
+  "ci_unstripped_bt3_exe_sha256": "1a97f690d71ada059074e9268071bbf798827f09a3f94b06d4d625ea1852220d",
+  "pe_machine": "0x8664",
+  "pe_optional_header": "0x20B",
+  "db_canonical_sha256": "959c6910c8ea55d3ff0122e30c791d4e963e18a1d78fe4089111a8ce6d6720e1",
+  "db1_default_enabled": false,
+  "legacy_default_enabled": false,
+  "native_game_fights_executed": 0,
+  "physical_tests_executed": 0,
+  "homologated": false,
+  "checked_symbols": [
+    "PortUdeDb_Filter",
+    "UdeDb_Choose",
+    "UdeDb_Step",
+    "BtlHit_PortUdeDbQuery"
+  ],
+  "artifact_digests": {
+    "windows_outer": "85b83f2cb8dd2cfd0f512d45c27438cf73c7375c945a72d6f6056b0bd6e073b2",
+    "logs_outer": "fcdba1ea979d4b57982dbd295b8d2e31a58afed1b619a9bce2c0c010318bf8d0",
+    "tests_outer": "7cd84ab82b5bb6b3d7507a017df576f7bb5b5ffe2abd58783d8639e3fdb4ecd6"
+  }
+}

@@ -1,0 +1,11 @@
+{
+  "protected_c3_files_checked": 77,
+  "changed": 0,
+  "legacy_branches": {
+    "ude-integration": "434f960e02a31f3c5874dde80a403edb1c4cad06",
+    "ude-v4": "187ffbf15b950706a12bf18a8648010582860d38",
+    "ude-hybrid-v5": "cb716e144ee7a7d39103a780dfffcdc2449791db"
+  },
+  "new_branch": "ude-db1",
+  "base_tag": "v0.1.39.6"
+}
