@@ -28,6 +28,12 @@ static volatile unsigned sDbStamp;
 static FILE *sDbLog;
 static char sDbLogBuffer[65536];
 
+/* Drop only this engine's packet. A pause/toggle must not erase the physical
+   owner's claim or allow a second press before the 30-update limit. */
+static void cancel_packet(UdeDbState *s) {
+    s->previous_added=0; s->release_due=0; s->holding=0;
+}
+
 static void close_log(void) { if (sDbLog) { fclose(sDbLog); sDbLog = NULL; } }
 static void initialize(void) {
     UdeDb_DefaultConfig(&sDbConfig);
@@ -85,7 +91,7 @@ unsigned PortUdeDb_Filter(int player, int active, unsigned physical) {
     if (sDbToggle) {
         sDbToggle = 0; sDbConfig.enabled = !sDbConfig.enabled;
         Port_SettingSave("ude_db_enabled", sDbConfig.enabled); Port_SettingsWrite();
-        UdeDb_Reset(&sDbState[0]); UdeDb_Reset(&sDbState[1]);
+        cancel_packet(&sDbState[0]); cancel_packet(&sDbState[1]);
         fprintf(stderr,"bt3: UDE-DB1 %s (offline, physical input priority)\n",sDbConfig.enabled?"on":"off");
     }
     sDbStamp++;
@@ -95,7 +101,7 @@ unsigned PortUdeDb_Filter(int player, int active, unsigned physical) {
     if (player < 0 || player > 1 || (sDbPlayer != 2 && sDbPlayer != player)) return physical;
     if (!active || Port_NetActive() || BattleReplay_IsActive() || gPortResim) {
         sDbMode = active ? UDE_SUSPENDED : -1;
-        UdeDb_Reset(&sDbState[player]);
+        cancel_packet(&sDbState[player]);
         if (sDbLog) fflush(sDbLog);
         return physical;
     }
@@ -105,7 +111,7 @@ unsigned PortUdeDb_Filter(int player, int active, unsigned physical) {
     me=BtlCharApi_GetObjIdOfPlayer(player); opp=BtlCharApi_GetOpponentObjId(me);
     if (me == opp || BtlCharApi_IsInputInjected(me)) { sDbMode=UDE_SUSPENDED; return physical; }
     own=BtlCharApi_GetChara(me);
-    if (sDbCharacter[player]!=own) { UdeDb_Reset(&sDbState[player]); sDbCharacter[player]=own; }
+    if (sDbCharacter[player]!=own) { cancel_packet(&sDbState[player]); sDbCharacter[player]=own; }
     b->valid=1; b->have_ext=1; b->have_recipe=1; b->fighting=1;
     b->my_action=b->recipe[UDE_X_MY_ACT]; b->opp_action=b->recipe[UDE_X_OPP_ACT];
     b->anim_flags=b->recipe[UDE_X_OWN_FLAGS]; b->game_free=b->recipe[UDE_X_FREE];

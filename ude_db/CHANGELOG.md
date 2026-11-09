@@ -2,6 +2,8 @@
 
 ## 2026-11-09 — fases 2–4 na branch nova
 
+Verificações finais de posse manual: habilitar DB1 no meio de uma ação, pausar e alternar o toggle não apagam a posse manual nem o intervalo de pressão. Lacunas no registro suspendem novas pressões e exigem retorno a estado neutro.
+
 | Arquivo | Motivo e evidência | Reversão |
 |---|---|---|
 | bt3_defesas_db.json | Acrescenta contrato escalar da candidata, defaults off e prioridades. Corrige a referência BtlDecide_Main de uma chamada em L2127 para a definição L2165, sem mudar os valores extraídos. | Usar o banco original preservado da fase 1; o gerador deve ser executado novamente. |

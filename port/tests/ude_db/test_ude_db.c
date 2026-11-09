@@ -173,6 +173,10 @@ int main(void) {
     for(i=2;i<12;i++)UdeDb_Step(&state,&cfg,&s,0,(unsigned)i,&d);
     check("manual_action_survives_grace",d.added==0&&d.reason==UDE_R_MANUAL_ACTION);
     s.battle.my_action=0xB;UdeDb_Step(&state,&cfg,&s,0,12,&d);check("claim_ends_at_neutral",d.recipe==UDE_DB_VANISH_EVADE);
+    UdeDb_Reset(&state);s.battle.my_action=0x44;
+    for(i=0;i<20;i++)UdeDb_Step(&state,&cfg,&s,0,(unsigned)i,&d);
+    check("enabling_mid_manual_action_does_not_take_ownership",d.added==0&&d.reason==UDE_R_MANUAL_ACTION);
+    s.battle.my_action=0xB;
     UdeDb_Step(&state,&cfg,&s,0,200,&d);check("gap_cannot_fabricate_fresh_edge",d.added==0);
     UdeDb_Reset(&state);errors=0;last_press=-100;s=base();
     for(i=0;i<20000;i++) {

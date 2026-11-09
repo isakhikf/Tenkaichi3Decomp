@@ -1,7 +1,7 @@
 {
   "test_ude_db": {
     "passed": true,
-    "result": "TOTAL,82,FAILED,0"
+    "result": "TOTAL,83,FAILED,0"
   },
   "test_native": {
     "passed": true,
@@ -9,7 +9,7 @@
   },
   "test_adapter": {
     "passed": true,
-    "result": "adapter_total=11 failed=0"
+    "result": "adapter_total=14 failed=0"
   },
   "level": "host synthetic policy + actual native C timer/accessor bodies; not a running fight",
   "compiler": [

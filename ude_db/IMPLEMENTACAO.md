@@ -41,8 +41,8 @@ O índice da tabela de ataques é o character ID obtido do objeto oponente por `
 
 | Checagem | Resultado local |
 |---|---:|
-| Política e arbitragem | 82 testes, zero falhas |
-| Adaptador / fronteira de leituras | 11 testes, zero falhas |
+| Política e arbitragem | 83 testes, zero falhas |
+| Adaptador / fronteira de leituras | 14 testes, zero falhas |
 | Funções C nativas e registros | 472.468 verificações, zero falhas |
 | Temporização com função nativa | 3.000 updates, 84 toques, zero resets anti-mash causados por eles |
 | Campanha de segurança sintética | 20.000 updates; zero sobrescritas físicas e zero intervalos de pressão menores que 30 |

@@ -78,6 +78,7 @@ never_two_presses_within_30_updates,PASS
 manual_on_release_frame_preserved,PASS
 manual_action_survives_grace,PASS
 claim_ends_at_neutral,PASS
+enabling_mid_manual_action_does_not_take_ownership,PASS
 gap_cannot_fabricate_fresh_edge,PASS
 20000_update_physical_safety_and_press_spacing,PASS
-TOTAL,82,FAILED,0
+TOTAL,83,FAILED,0

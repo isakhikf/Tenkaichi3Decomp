@@ -309,9 +309,17 @@ unsigned UdeDb_Step(UdeDbState *state, const UdeDbConfig *c, const UdeDbSnapshot
     int manual = (physical & ~DERIVED) != 0;
     if (!state || !c || !raw) { d = blocked(0,UDE_R_BAD_SNAPSHOT); d.buttons = physical; if (out) *out = d; return physical; }
     s = *raw; s.config = *c; s.physical = physical; s.frame = frame;
+    if (!state->have_frame) {
+        int a = raw->battle.my_action;
+        int neutral = a == 0xB || a == 0xD || a == 0xE || a == 0xF || a == 0x38 || (a >= 0xB8 && a <= 0xEB);
+        /* Enabling DB1 halfway through an action must not claim that action
+           as its own merely because the initiating physical press was earlier. */
+        if (!neutral) { state->manual_age=0; state->claim=1; state->claim_wait=2; }
+    }
     if (state->have_frame && frame != state->last_frame + 1u) {
         /* A sparse trace/load cannot prove an input edge. Wait >=30 updates. */
         UdeDb_Reset(state); state->press_age = 0;
+        state->manual_age = 0; state->claim = 1; state->claim_wait = 2;
     }
     if (state->manual_age < AGE_MAX) state->manual_age++;
     if (state->press_age < AGE_MAX) state->press_age++;

@@ -54,5 +54,9 @@ int main(void) {
     check("exactly_two_additional_reads_per_valid_db1_frame",extra_reads==2);
     frame++;out=PortUdeDb_Filter(0,1,0x80);check("physical_direction_cancels",out==0x80);
     PortUdeDb_RequestToggle();check("toggle_off_restores_old_path",PortUdeDb_Filter(0,1,8)==8&&legacy==2);
+    PortUdeDb_RequestToggle();frame++;
+    check("toggle_does_not_erase_manual_grace_or_press_history",PortUdeDb_Filter(0,1,0)==0&&legacy==2);
+    frame++;check("inactive_does_not_read_game_state",PortUdeDb_Filter(0,0,0)==0);
+    frame++;check("resume_does_not_fabricate_a_fresh_press",PortUdeDb_Filter(0,1,0)==0);
     printf("adapter_total=%d failed=%d\n",total,failed);return failed?1:0;
 }
