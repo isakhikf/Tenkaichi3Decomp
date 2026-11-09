@@ -253,7 +253,7 @@ static UdeDbDecision blocked(const UdeDbSnapshot *s, int reason) {
 
 UdeDbDecision UdeDb_Choose(const UdeDbSnapshot *s) {
     UdeDbDecision d;
-    int i, r, t, chosen = 0, preparing_release = 0, primary = UDE_R_NO_THREAT;
+    int i, r, t, chosen = 0, preparing_release = 0, waiting = 0, primary = UDE_R_NO_THREAT;
     unsigned add;
     if (!s || !s->config.enabled) return blocked(s,UDE_R_DISABLED);
     if (!s->battle.valid || !s->battle.have_ext || !s->battle.have_recipe) return blocked(s,UDE_R_BAD_SNAPSHOT);
@@ -281,23 +281,41 @@ UdeDbDecision UdeDb_Choose(const UdeDbSnapshot *s) {
         int k = kUdeDbPriority[i];
         r = evaluate(s,k,t,&add);
         if (!r) r = fresh_input_reason(s,add,kUdeDbTechniques[k].pulse,-1);
-        d.rejected[k] = !r && (chosen || preparing_release) ? UDE_DB_R_LOWER_PRIORITY : r;
-        if (!chosen && !preparing_release && r == UDE_R_RECIPE_EDGE &&
+        d.rejected[k] = !r && (chosen || preparing_release || waiting) ? UDE_DB_R_LOWER_PRIORITY : r;
+        /* A legal timed recipe owns the upcoming edge while it waits. Falling
+           through to GUARD_HOLD here opens the shared native windows during the
+           wind-up, so the intended evasion is cooling when contact arrives.
+           Reserve only an observed ETA and an otherwise fresh, ready packet;
+           unavailable capability/window/input must still permit normal fallback. */
+        if (!chosen && !preparing_release && !waiting && r == UDE_R_WAIT_TIMING && kUdeDbTechniques[k].pulse) {
+            int e = eta100(s,t), window = kUdeDbTechniques[k].window;
+            if (k == UDE_DB_THROW_BREAK && recipe_value(s,UDE_X_OPP_A5,0)) window = UDE_W_RUSH;
+            if (e >= 0 && e <= 9000 && fresh_input_reason(s,add,1,window) == UDE_R_NONE) {
+                int lead = s->config.tap_lead100, delta;
+                if (lead < 0) lead = 0;
+                if (lead > 100) lead = 100;
+                if (k == UDE_DB_Z_COUNTER || (k == UDE_DB_VANISH_EVADE && (s->battle.opp_attack_flags & 0x4000000))) lead = 0;
+                delta = e > lead ? (e-lead+99)/100 : 0;
+                waiting = 1; d.reason = UDE_R_WAIT_TIMING;
+                d.press_frame = (int)(s->frame+(unsigned)delta);
+            }
+        }
+        if (!chosen && !preparing_release && !waiting && r == UDE_R_RECIPE_EDGE &&
             ((eta100(s,t) >= 100 && eta100(s,t) <= 9000) || k == UDE_DB_RECOVERY) &&
             s->press_age >= (s->config.min_press_gap > 30 ? s->config.min_press_gap : 30) &&
             all_guard_windows_ready(s)) {
             preparing_release = 1; d.reason = UDE_DB_R_RELEASE;
             d.press_frame = (int)(s->frame + 1u);
         }
-        if (r != UDE_DB_R_NOT_APPLICABLE && r != UDE_R_DISABLED && primary == UDE_R_NO_THREAT) primary = r;
-        if (!r && !chosen && !preparing_release) {
+        if (r != UDE_DB_R_NOT_APPLICABLE && r != UDE_DB_R_FORBIDDEN && r != UDE_R_DISABLED && primary == UDE_R_NO_THREAT) primary = r;
+        if (!r && !chosen && !preparing_release && !waiting) {
             chosen = k; d.recipe = k; d.added = add;
             d.reason = UDE_R_NONE; d.press_frame = (int)s->frame;
             d.press_edge = kUdeDbTechniques[k].pulse || ((add & GUARD) && !(s->previous_added & GUARD)) ||
                            ((add & GUARD) && ((add & (LEFT|RIGHT)) & ~s->previous_added));
         }
     }
-    if (!chosen && !preparing_release) d.reason = primary;
+    if (!chosen && !preparing_release && !waiting) d.reason = primary;
     d.buttons = s->physical | d.added;
     return d;
 }

@@ -76,6 +76,27 @@ int main(int argc,char **argv) {
         if(d.press_edge && (m.unk1068==-1||m.unk106C==-1||m.unk107C==-1))wasted++;
     }
     verify(auto_presses>50 && wasted==0 && state.manual_overwrites==0);
+    /* Regression from the offline reproduction: the old fallback pressed GUARD
+       before a timed recipe was due, spending the native window in the wind-up.
+       Feed each policy output through the actual unchanged timer before the
+       next snapshot; an isolated contact snapshot cannot detect this failure. */
+    for(k=0;k<2;k++) {
+        int step,presses=0,press_at=-1;
+        UdeDb_Reset(&state);memset(&m,0,sizeof m);
+        m.health=k?0.2f:1.0f;m.unkFB0=1;m.flags[5]=1;
+        m.unk1068=m.unk106C=m.unk1070=m.unk1078=m.unk107C=-30;m.unk1074=-15;
+        for(step=0;step<=6;step++) {
+            int w;int *wins=&m.unk1068;
+            for(w=0;w<6;w++)s.battle.win[w]=wins[w];
+            s.battle.recipe[UDE_X_UNTIL100]=(6-step)*100;
+            UdeDb_Step(&state,&cfg,&s,0,(unsigned)step,&d);
+            if(d.press_edge){presses++;press_at=step;}
+            if(step<5)verify(d.added==0&&d.reason==UDE_R_WAIT_TIMING);
+            m.previous=m.held;m.held=d.buttons;
+            BtlMove_UpdateDefenseTimers(&m);
+        }
+        verify(presses==1&&press_at==5&&m.unk1068>0);
+    }
     printf("native_records=26243 native_checks=%d temporal_updates=3000 auto_presses=%d wasted_taps=%d failed=%d\n",checks,auto_presses,wasted,fails);
     return fails?1:0;
 }

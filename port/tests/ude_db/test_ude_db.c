@@ -110,6 +110,19 @@ int main(void) {
     check("sway_posture_needs_ki",rejection(&s,UDE_DB_SONIC_SWAY,UDE_R_NO_KI));
     s=base(); s.battle.recipe[UDE_X_FIRST_HIT]=0;
     check("GUARD_HOLD",selected(&s,UDE_DB_GUARD_HOLD));
+    s=base();s.battle.recipe[UDE_X_UNTIL100]=600;
+    d=UdeDb_Choose(&s);
+    check("early_guard_must_not_spend_the_planned_evade_edge",d.added==0&&d.reason==UDE_R_WAIT_TIMING&&d.press_frame==105);
+    s.physical=0x80;d=UdeDb_Choose(&s);
+    check("manual_input_cancels_the_waiting_defence",d.buttons==0x80&&d.reason==UDE_R_MANUAL);
+    s=projectile(1);s.battle.recipe[UDE_X_INC_ETA100]=600;
+    d=UdeDb_Choose(&s);
+    check("early_beam_guard_must_not_spend_the_evade_edge",d.added==0&&d.reason==UDE_R_WAIT_TIMING&&d.press_frame==105);
+    s=base();s.battle.recipe[UDE_X_UNTIL100]=UDE_X_NONE100;
+    check("unknown_contact_keeps_plain_guard_fallback",selected(&s,UDE_DB_GUARD_HOLD));
+    s=base();s.battle.opp_action=0xB;s.battle.opp_attacking=0;s.battle.recipe[UDE_X_MELEE]=0;attack(&s,-1);
+    check("idle_reports_no_threat_instead_of_a_forbidden_disabled_recipe",UdeDb_Choose(&s).reason==UDE_R_NO_THREAT);
+    s=base(); s.battle.recipe[UDE_X_FIRST_HIT]=0;
     s.battle.behind=1; check("guard_from_behind",rejection(&s,UDE_DB_GUARD_HOLD,UDE_R_BEHIND));
     for(i=11;i<163;i++) {
         const UdeDbAttack *a=UdeDb_Attack(0,i);

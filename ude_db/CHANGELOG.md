@@ -1,5 +1,13 @@
 # Changelog — UDE-DB1
 
+## 2026-11-09 — correção após relato de falha em jogo
+
+- `port/src/ude_db.c`: uma receita temporizada, elegível e com ETA conhecido agora reserva a próxima borda de input. A guarda de prioridade inferior não abre as janelas durante a preparação do ataque. A reserva exige capacidade, animação, janela, intervalo e input válidos; não remove bits físicos e é reavaliada a cada update. ETA desconhecido mantém o fallback de guarda. A mensagem de repouso passa de `forbidden` para `no_threat`.
+- Evidência: reprodução offline local de 1.886 snapshots completos no build `96cac4b`, incluindo frame 844 (ataque 25, flags 2305, primeiro hit, ETA 300, janelas nos pisos): a receita VANISH era recusada por `wait_timing` mas GUARD_HOLD pressionava no mesmo update. O registro antigo contém 123 amostras de contribuição e 11 bordas; a falha não significa que todo o motor estivesse desligado. Estes números descrevem essa reprodução, sem medir a eficácia do build corrigido.
+- `port/tests/ude_db/test_ude_db.c`: regressões para o preparo de melee/beam, cancelamento manual, ETA desconhecido e motivo em repouso. Três delas falham no código anterior e passam com a correção.
+- `port/tests/ude_db/test_native.c`: sequência fechada política → corpo C nativo dos timers → próximo snapshot, com contato seis updates à frente, vida alta e baixa. Exige borda perto do contato e janela ainda aberta, sem alterar o timer.
+- Reversão: reverter somente este commit na branch `ude-db1`; C3, outras branches e dados do jogo permanecem intactos.
+
 ## 2026-11-09 — fases 2–4 na branch nova
 
 Verificações finais de posse manual: habilitar DB1 no meio de uma ação, pausar e alternar o toggle não apagam a posse manual nem o intervalo de pressão. Lacunas no registro suspendem novas pressões e exigem retorno a estado neutro.
