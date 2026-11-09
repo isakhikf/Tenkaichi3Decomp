@@ -147,6 +147,8 @@ int main(void) {
     check("no_deflect_capability_guard",selected(&s,UDE_DB_GUARD_HOLD));
     s=projectile(0); s.battle.recipe[UDE_X_CAPS]=0; s.battle.close=1; s.config.sidestep=1;
     check("SIDESTEP_opt_in",selected(&s,UDE_DB_SIDESTEP));
+    s.previous_added=0x100041;
+    check("sidestep_also_requires_fresh_direction",UdeDb_Choose(&s).recipe==0&&UdeDb_Choose(&s).reason==UDE_DB_R_RELEASE);
     s=base(); s.battle.my_action=0xD5; s.battle.my_action_frame=9; s.battle.recover_ok=1; s.config.recover=1;
     check("RECOVERY_opt_in",selected(&s,UDE_DB_RECOVERY));
     s.config.recover=0; check("recovery_off_by_default",rejection(&s,UDE_DB_RECOVERY,UDE_R_DISABLED));

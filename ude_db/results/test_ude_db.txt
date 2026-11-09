@@ -57,6 +57,7 @@ deflect_behind,PASS
 unredirectable_blast_guard,PASS
 no_deflect_capability_guard,PASS
 SIDESTEP_opt_in,PASS
+sidestep_also_requires_fresh_direction,PASS
 RECOVERY_opt_in,PASS
 recovery_off_by_default,PASS
 VANISHING_STEP,PASS
@@ -81,4 +82,4 @@ claim_ends_at_neutral,PASS
 enabling_mid_manual_action_does_not_take_ownership,PASS
 gap_cannot_fabricate_fresh_edge,PASS
 20000_update_physical_safety_and_press_spacing,PASS
-TOTAL,83,FAILED,0
+TOTAL,84,FAILED,0

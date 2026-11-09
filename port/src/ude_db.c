@@ -86,7 +86,7 @@ static int fresh_input_reason(const UdeDbSnapshot *s, unsigned add, int pulse, i
     int fresh_guard = (add & GUARD) && !(s->previous_added & GUARD);
     int fresh_side = (add & GUARD) && ((add & (LEFT|RIGHT)) & ~s->previous_added);
     unsigned trigger = add & RUSH ? (UP|RUSH) : add & BLAST ? 0x1000000u :
-                       add & DASH ? DASH : (add & GUARD) && (add & (LEFT|RIGHT)) ? add & (LEFT|RIGHT) : GUARD;
+                       add & DASH ? add & (DASH|LEFT|RIGHT) : (add & GUARD) && (add & (LEFT|RIGHT)) ? add & (LEFT|RIGHT) : GUARD;
     if (pulse && (add & GUARD) && !s->battle.flag5) return UDE_R_NOT_EVADABLE;
     if (pulse && window >= 0 && !ready(s, window)) return UDE_R_WINDOW_COOLING;
     /* A new plain hold is also condition 39. It cannot bypass anti-mash. */
