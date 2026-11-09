@@ -63,6 +63,11 @@ int main(void) {
     check("default_off",!cfg.enabled&&!cfg.recover&&!cfg.dragon_escape&&cfg.min_press_gap>=30);
     check("attack_bounds",!UdeDb_Attack(-1,0)&&!UdeDb_Attack(161,0)&&!UdeDb_Attack(0,163));
     s=base(); check("VANISH_EVADE",selected(&s,UDE_DB_VANISH_EVADE));
+    s.previous_added=0x100001;s.battle.recipe[UDE_X_UNTIL100]=100;
+    d=UdeDb_Choose(&s);check("held_guard_prepares_release",d.recipe==0&&d.reason==UDE_DB_R_RELEASE&&d.press_frame==101);
+    s.battle.recipe[UDE_X_UNTIL100]=0;
+    check("held_guard_is_not_falsely_counted_as_tap",!selected(&s,UDE_DB_VANISH_EVADE)&&rejection(&s,UDE_DB_VANISH_EVADE,UDE_R_RECIPE_EDGE));
+    s.previous_added=0;check("released_guard_can_form_fresh_tap",selected(&s,UDE_DB_VANISH_EVADE));
     s.config.enabled=0; check("disabled_no_output",selected(&s,UDE_DB_NONE)&&UdeDb_Choose(&s).reason==UDE_R_DISABLED);
     s=base(); s.battle.online=1; check("online",UdeDb_Choose(&s).reason==UDE_R_ONLINE);
     s=base(); s.battle.replay=1; check("replay",UdeDb_Choose(&s).reason==UDE_R_REPLAY);
@@ -89,6 +94,8 @@ int main(void) {
     s=base(); s.battle.opp_attack_flags^=1; check("live_flags_must_match_database",rejection(&s,UDE_DB_VANISH_EVADE,UDE_DB_R_RECORD_MISMATCH));
     s=base(); s.config.kinds&=~(1u<<UDE_DB_VANISH_EVADE); s.config.z_counter=1;
     check("Z_COUNTER_opt_in",selected(&s,UDE_DB_Z_COUNTER));
+    s.battle.recipe[UDE_X_UNTIL100]=100;check("Z_not_one_frame_early",rejection(&s,UDE_DB_Z_COUNTER,UDE_R_WAIT_TIMING));
+    s.previous_added=0x10;d=UdeDb_Choose(&s);check("Z_releases_previously_held_up",d.recipe==0&&d.reason==UDE_DB_R_RELEASE);
     s=base(); s.battle.recipe[UDE_X_DODGE_WIN]=0; s.battle.anim_flags=0;
     check("illegal_animation_no_vanish",rejection(&s,UDE_DB_VANISH_EVADE,UDE_DB_R_ANIMATION));
     s=base(); attack(&s,find_attack(1|0x4000000,0,11)); s.battle.recipe[UDE_X_UNTIL100]=100;
@@ -126,6 +133,10 @@ int main(void) {
     s.projectile_hits=1; check("beam_later_hit_guard",selected(&s,UDE_DB_GUARD_HOLD)&&rejection(&s,UDE_DB_BLAST_EVADE,UDE_DB_R_LATER_HIT));
     s.projectile_hits=-1; check("beam_count_unknown_guard",selected(&s,UDE_DB_GUARD_HOLD)&&rejection(&s,UDE_DB_BLAST_EVADE,UDE_DB_R_FIRST_HIT_UNKNOWN));
     s=projectile(0); check("KI_DEFLECT",selected(&s,UDE_DB_KI_DEFLECT));
+    s.previous_added=0x100041;s.battle.my_action=0x38;
+    check("depleted_deflect_stance_renews_its_edge",UdeDb_Choose(&s).reason==UDE_DB_R_RELEASE);
+    s.battle.my_action=0x3B;check("active_deflect_stance_stays_held",selected(&s,UDE_DB_KI_DEFLECT));
+    s.previous_added=0;s.battle.my_action=0xB;
     s.own_flag41=1; check("PERFECT_DEFLECT",selected(&s,UDE_DB_PERFECT_DEFLECT));
     s.own_flag41=-1; check("perfect_flag_not_inferred",rejection(&s,UDE_DB_PERFECT_DEFLECT,UDE_DB_R_CAPABILITY));
     s=projectile(0); s.battle.recipe[UDE_X_INC]|=UDE_INC_BEHIND;

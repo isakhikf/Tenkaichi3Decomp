@@ -10,6 +10,7 @@
 #define UP 0x10u
 #define DOWN 0x20u
 #define LEFT 0x40u
+#define RIGHT 0x80u
 #define ANY 0x100000u
 #define DERIVED (ANY | 0x78000000u | 0x01000000u)
 #define AGE_MAX 1000000
@@ -83,12 +84,16 @@ static int all_guard_windows_ready(const UdeDbSnapshot *s) {
 }
 static int fresh_input_reason(const UdeDbSnapshot *s, unsigned add, int pulse, int window) {
     int fresh_guard = (add & GUARD) && !(s->previous_added & GUARD);
+    int fresh_side = (add & GUARD) && ((add & (LEFT|RIGHT)) & ~s->previous_added);
+    unsigned trigger = add & RUSH ? (UP|RUSH) : add & BLAST ? 0x1000000u :
+                       add & DASH ? DASH : (add & GUARD) && (add & (LEFT|RIGHT)) ? add & (LEFT|RIGHT) : GUARD;
     if (pulse && (add & GUARD) && !s->battle.flag5) return UDE_R_NOT_EVADABLE;
     if (pulse && window >= 0 && !ready(s, window)) return UDE_R_WINDOW_COOLING;
     /* A new plain hold is also condition 39. It cannot bypass anti-mash. */
     if (fresh_guard && s->battle.flag5 && !all_guard_windows_ready(s)) return UDE_R_WINDOW_COOLING;
-    if ((fresh_guard || pulse) && s->press_age < (s->config.min_press_gap > 30 ? s->config.min_press_gap : 30))
+    if ((fresh_guard || fresh_side || pulse) && s->press_age < (s->config.min_press_gap > 30 ? s->config.min_press_gap : 30))
         return UDE_DB_R_PRESS_GAP;
+    if (pulse && (s->previous_added & trigger)) return UDE_R_RECIPE_EDGE;
     return UDE_R_NONE;
 }
 static int enabled(const UdeDbSnapshot *s, int k) {
@@ -171,6 +176,8 @@ static int evaluate(const UdeDbSnapshot *s, int k, int t, unsigned *add) {
         /* Native stance admission requires an observed incoming blast <= 90.
            Keep GUARD+side held so condition 43 is not mashed every update. */
         if (eta100(s, t) < 0 || eta100(s, t) > 9000) return UDE_R_WAIT_TIMING;
+        if ((s->previous_added & (GUARD|LEFT)) == (GUARD|LEFT) &&
+            b->my_action != 0x3B && b->my_action != 0x3D) return UDE_R_RECIPE_EDGE;
         return fresh_input_reason(s, *add, 0, -1);
     case UDE_DB_VANISH_EVADE:
     case UDE_DB_SONIC_SWAY:
@@ -187,15 +194,19 @@ static int evaluate(const UdeDbSnapshot *s, int k, int t, unsigned *add) {
         } else if (k == UDE_DB_VANISH_EVADE) {
             if (!(a->flags & 1)) return UDE_R_NOT_EVADABLE;
             if (b->no_evade || !recipe_value(s,UDE_X_DODGE_WIN,0)) return UDE_DB_R_ANIMATION;
-            /* At low health the native opening is only two updates. With the
-               extra-level flag, one update of lead would be too early. */
-            if ((a->flags & 0x4000000) && eta100(s,t) != 0) return UDE_R_WAIT_TIMING;
         } else {
             if (!s->config.z_counter) return UDE_R_DISABLED;
             if (!(b->anim_flags & 0x31)) return UDE_DB_R_ANIMATION;
         }
         r = timed(s, t); if (r) return r;
-        return fresh_input_reason(s,*add,1,k == UDE_DB_VANISH_EVADE ? UDE_W_EVADE : k == UDE_DB_Z_COUNTER ? UDE_W_COUNTER : -1);
+        r = fresh_input_reason(s,*add,1,k == UDE_DB_VANISH_EVADE ? UDE_W_EVADE : k == UDE_DB_Z_COUNTER ? UDE_W_COUNTER : -1);
+        if (r) return r;
+        /* A Z window lasts one update. At low health an extra-level melee
+           evasion has only one usable update too. Release preparation may
+           happen one update earlier, but the press itself must be at contact. */
+        if ((k == UDE_DB_Z_COUNTER || (k == UDE_DB_VANISH_EVADE && (a->flags & 0x4000000))) && eta100(s,t) != 0)
+            return UDE_R_WAIT_TIMING;
+        return UDE_R_NONE;
     case UDE_DB_DRAGON_DASH_ESCAPE:
     case UDE_DB_SIDESTEP:
         if (t != UDE_T_TECHNIQUE && t != UDE_T_BLAST) return UDE_DB_R_NOT_APPLICABLE;
@@ -242,7 +253,7 @@ static UdeDbDecision blocked(const UdeDbSnapshot *s, int reason) {
 
 UdeDbDecision UdeDb_Choose(const UdeDbSnapshot *s) {
     UdeDbDecision d;
-    int i, r, t, chosen = 0, primary = UDE_R_NO_THREAT;
+    int i, r, t, chosen = 0, preparing_release = 0, primary = UDE_R_NO_THREAT;
     unsigned add;
     if (!s || !s->config.enabled) return blocked(s,UDE_R_DISABLED);
     if (!s->battle.valid || !s->battle.have_ext || !s->battle.have_recipe) return blocked(s,UDE_R_BAD_SNAPSHOT);
@@ -270,15 +281,23 @@ UdeDbDecision UdeDb_Choose(const UdeDbSnapshot *s) {
         int k = kUdeDbPriority[i];
         r = evaluate(s,k,t,&add);
         if (!r) r = fresh_input_reason(s,add,kUdeDbTechniques[k].pulse,-1);
-        d.rejected[k] = !r && chosen ? UDE_DB_R_LOWER_PRIORITY : r;
+        d.rejected[k] = !r && (chosen || preparing_release) ? UDE_DB_R_LOWER_PRIORITY : r;
+        if (!chosen && !preparing_release && r == UDE_R_RECIPE_EDGE &&
+            ((eta100(s,t) >= 100 && eta100(s,t) <= 9000) || k == UDE_DB_RECOVERY) &&
+            s->press_age >= (s->config.min_press_gap > 30 ? s->config.min_press_gap : 30) &&
+            all_guard_windows_ready(s)) {
+            preparing_release = 1; d.reason = UDE_DB_R_RELEASE;
+            d.press_frame = (int)(s->frame + 1u);
+        }
         if (r != UDE_DB_R_NOT_APPLICABLE && r != UDE_R_DISABLED && primary == UDE_R_NO_THREAT) primary = r;
-        if (!r && !chosen) {
+        if (!r && !chosen && !preparing_release) {
             chosen = k; d.recipe = k; d.added = add;
             d.reason = UDE_R_NONE; d.press_frame = (int)s->frame;
-            d.press_edge = kUdeDbTechniques[k].pulse || ((add & GUARD) && !(s->previous_added & GUARD));
+            d.press_edge = kUdeDbTechniques[k].pulse || ((add & GUARD) && !(s->previous_added & GUARD)) ||
+                           ((add & GUARD) && ((add & (LEFT|RIGHT)) & ~s->previous_added));
         }
     }
-    if (!chosen) d.reason = primary;
+    if (!chosen && !preparing_release) d.reason = primary;
     d.buttons = s->physical | d.added;
     return d;
 }

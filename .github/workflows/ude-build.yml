@@ -26,6 +26,7 @@ jobs:
           python3 tools/defense_db/build.py
           python3 tools/defense_db/build.py --check
           python3 port/tests/ude_db/run_tests.py
+          python3 port/tests/ude_db/replay_logs.py
       - name: UDE host tests (unit, logic simulation, property campaigns, database-driven)
         run: |
           set -e
@@ -59,8 +60,8 @@ jobs:
           name: ude-test-results
           path: |
             port/tests/ude/results_*
-            port/tests/ude_db/results/*.txt
-            port/tests/ude_db/results/*.json
+            port/tests/ude_db/results/**/*.txt
+            port/tests/ude_db/results/**/*.json
 
   build:
     needs: engine-tests
