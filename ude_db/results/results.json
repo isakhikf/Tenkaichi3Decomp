@@ -1,0 +1,19 @@
+{
+  "test_ude_db": {
+    "passed": true,
+    "result": "TOTAL,82,FAILED,0"
+  },
+  "test_native": {
+    "passed": true,
+    "result": "native_records=26243 native_checks=472468 temporal_updates=3000 auto_presses=84 wasted_taps=0 failed=0"
+  },
+  "test_adapter": {
+    "passed": true,
+    "result": "adapter_total=11 failed=0"
+  },
+  "level": "host synthetic policy + actual native C timer/accessor bodies; not a running fight",
+  "compiler": [
+    "C:\\Users\\isakhi_\\Documents\\Codex\\2026-10-23\\cr\\work\\bt3-v3\\compiler\\zig-windows-x86_64-0.13.0\\zig.exe",
+    "cc"
+  ]
+}

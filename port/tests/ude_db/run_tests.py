@@ -15,7 +15,7 @@ HERE=Path(__file__).resolve().parent
 
 
 def function(text,name):
-    m=re.search(r'^.*\b'+re.escape(name)+r'\([^;\n]*\)\s*\{',text,re.M)
+    m=re.search(r'^[ \t]*(?:(?:static|inline)\s+)*(?:void|s32|u32|f32|int|UrIncoming)\s+'+re.escape(name)+r'\([^;\n]*\)\s*\{',text,re.M)
     if not m:raise ValueError('Native function missing: '+name)
     start=text.index('{',m.start());depth=1;i=start+1
     while depth:

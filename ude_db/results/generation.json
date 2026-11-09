@@ -1,0 +1,164 @@
+{
+  "version": "1.1.0",
+  "canonical_json_sha256": "959c6910c8ea55d3ff0122e30c791d4e963e18a1d78fe4089111a8ce6d6720e1",
+  "legacy_tables_unchanged": 30,
+  "tables": [
+    {
+      "name": "meta",
+      "rows": 3,
+      "unchanged": true
+    },
+    {
+      "name": "file_cache",
+      "rows": 148,
+      "unchanged": true
+    },
+    {
+      "name": "characters",
+      "rows": 0,
+      "unchanged": true
+    },
+    {
+      "name": "states",
+      "rows": 316,
+      "unchanged": true
+    },
+    {
+      "name": "transitions",
+      "rows": 6000,
+      "unchanged": true
+    },
+    {
+      "name": "input_conditions",
+      "rows": 114,
+      "unchanged": true
+    },
+    {
+      "name": "state_conditions",
+      "rows": 142,
+      "unchanged": true
+    },
+    {
+      "name": "buttons",
+      "rows": 64,
+      "unchanged": true
+    },
+    {
+      "name": "moves",
+      "rows": 6,
+      "unchanged": true
+    },
+    {
+      "name": "defenses",
+      "rows": 8,
+      "unchanged": true
+    },
+    {
+      "name": "reaction_windows",
+      "rows": 6,
+      "unchanged": true
+    },
+    {
+      "name": "combos",
+      "rows": 29647,
+      "unchanged": true
+    },
+    {
+      "name": "test_results",
+      "rows": 156,
+      "unchanged": true
+    },
+    {
+      "name": "measurements",
+      "rows": 56,
+      "unchanged": true
+    },
+    {
+      "name": "unresolved",
+      "rows": 5,
+      "unchanged": true
+    },
+    {
+      "name": "defense_techniques",
+      "rows": 23,
+      "unchanged": true
+    },
+    {
+      "name": "log_files",
+      "rows": 1,
+      "unchanged": true
+    },
+    {
+      "name": "sessions",
+      "rows": 4,
+      "unchanged": true
+    },
+    {
+      "name": "contact_observations",
+      "rows": 28,
+      "unchanged": true
+    },
+    {
+      "name": "contact_timing",
+      "rows": 15,
+      "unchanged": true
+    },
+    {
+      "name": "measurement_conflicts",
+      "rows": 1,
+      "unchanged": true
+    },
+    {
+      "name": "contact_timing_hits",
+      "rows": 4,
+      "unchanged": true
+    },
+    {
+      "name": "codex_revisions",
+      "rows": 9,
+      "unchanged": true
+    },
+    {
+      "name": "codex_files",
+      "rows": 8897,
+      "unchanged": true
+    },
+    {
+      "name": "codex_recipes",
+      "rows": 14,
+      "unchanged": true
+    },
+    {
+      "name": "codex_features",
+      "rows": 17,
+      "unchanged": true
+    },
+    {
+      "name": "codex_evidence",
+      "rows": 17,
+      "unchanged": true
+    },
+    {
+      "name": "recipe_validation",
+      "rows": 98,
+      "unchanged": true
+    },
+    {
+      "name": "v5_deviations",
+      "rows": 8,
+      "unchanged": true
+    },
+    {
+      "name": "press_observations",
+      "rows": 0,
+      "unchanged": true
+    }
+  ],
+  "imported_tables": {
+    "technique": 21,
+    "window": 7,
+    "threat_class": 7,
+    "attack_record": 26243,
+    "evidence": 26604
+  }
+}

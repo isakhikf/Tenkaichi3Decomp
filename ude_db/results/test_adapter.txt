@@ -1,0 +1,14 @@
+bt3: UDE-DB1 on (offline, physical input priority)
+bt3: UDE-DB1 off (offline, physical input priority)
+adapter_default_delegates_to_unchanged_legacy,PASS
+adapter_online_no_game_reads,PASS
+adapter_replay_no_game_reads,PASS
+adapter_resim_no_game_reads,PASS
+adapter_inactive_no_roster_or_frame_reads,PASS
+adapter_other_side_no_game_reads,PASS
+adapter_cpu_unchanged,PASS
+adapter_opponent_object_character_indexes_table,PASS
+adapter_exactly_two_additional_reads_per_valid_db1_frame,PASS
+adapter_physical_direction_cancels,PASS
+adapter_toggle_off_restores_old_path,PASS
+adapter_total=11 failed=0

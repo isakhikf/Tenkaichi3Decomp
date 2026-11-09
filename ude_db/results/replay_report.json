@@ -1,0 +1,210 @@
+{
+  "synthetic_fidelity": {
+    "file": "C:\\Users\\isakhi_\\Documents\\Codex\\2026-11-08\\files-mentioned-by-the-user-bt3\\work\\ude-db1\\port\\tests\\ude_db\\results\\replay\\synthetic_db1_log.jsonl",
+    "sha256": "6bf8b61741245c60be4775a4e885da45af2a7de3cb3b479bd7a17c41dae19cdd",
+    "rows": 120,
+    "matched_decisions": 120,
+    "manual_bits_removed": 0,
+    "interventions": 4,
+    "presses": 4,
+    "reasons": {
+      "0": 4,
+      "33": 4,
+      "34": 104,
+      "9": 8
+    },
+    "minimum_press_gap": 30,
+    "observed_success_flags": {
+      "0x12C": 0,
+      "0x79": 0,
+      "0x6B": 0
+    },
+    "counterfactual_successes": null,
+    "flag_0x7B": "not exposed by legacy query 25; Z is disabled by default",
+    "scope": "synthetic fixture only; no observed game successes"
+  },
+  "historical_c5": {
+    "file": "C:\\Users\\isakhi_\\Documents\\Codex\\2026-11-08\\files-mentioned-by-the-user-bt3\\work\\ude-db1\\port\\tests\\ude\\data\\real_c5_ude_log.csv",
+    "sha256": "f39e2d7bbb591bd81cf301290b52630d2331c4d6932f03e41e1d13262f7c6318",
+    "rows": 634,
+    "legacy_fidelity": {
+      "rows": 634,
+      "compared": 599,
+      "same_reason": 597,
+      "same_injected": 599,
+      "same_threat": 588
+    },
+    "db1_fully_replayable_rows": 0,
+    "db1_missing": [
+      "recipe_snapshot[71]",
+      "opponent character ID",
+      "native first projectile hit count",
+      "own flag 0x41"
+    ],
+    "db1_interventions": null,
+    "db1_successes": null,
+    "scope": "Legacy decisions reproduced; DB1 decisions/successes cannot be reconstructed from this schema."
+  },
+  "historical_c3": [
+    {
+      "file": "C:\\Users\\isakhi_\\Downloads\\BT3-UDE-C3-Online-Candidata-0.1.39.6\\diagnosticos-defesa\\partida-20261105-140246-8824.bt3trace",
+      "sha256": "b2e56ceb31d3f14bbe0fc3d76d9b52763dbbc33be5cb32e0398612cb1072d2bf",
+      "records": 462485,
+      "record_kinds": {
+        "16": 12,
+        "12": 162980,
+        "13": 168257,
+        "14": 34023,
+        "0": 91652,
+        "15": 284,
+        "24": 563,
+        "27": 522,
+        "28": 471,
+        "29": 471,
+        "10": 912,
+        "23": 1290,
+        "22": 668,
+        "26": 380
+      },
+      "pad_filter_samples": 91652,
+      "samples_with_output_changed": 10031,
+      "samples_with_physical_bits_removed": 6919,
+      "native_calls_accepted": {
+        "Z_counter": 127,
+        "projectile_evade": 41,
+        "Sonic_Sway": 546,
+        "deflect": 51,
+        "dodge_or_Sway": 75,
+        "guard_or_Z": 161
+      },
+      "native_calls_refused": {
+        "projectile_evade": 522,
+        "deflect": 471,
+        "reflect": 471,
+        "absorb": 471,
+        "dodge_or_Sway": 669,
+        "guard_or_Z": 380,
+        "throw_break": 380
+      },
+      "window_transitions_to_minus1": 5843,
+      "db1_fully_replayable_rows": 0,
+      "db1_interventions": null,
+      "db1_successes": null,
+      "scope": "C3 observations, possibly mixed offline/online epochs. Accepted native calls include manual and legacy effects. Repeated VBlank samples and -1 transitions are NOT automatically wasted assistant taps.",
+      "db1_missing": [
+        "pre-input contact ETA",
+        "complete recipe snapshot and manual ownership state",
+        "per-decision configuration"
+      ],
+      "flag_success_mapping": "Resolver observations are reported by kind/result, not invented raw flags 0x12C/0x79/0x7B/0x6B."
+    },
+    {
+      "file": "C:\\Users\\isakhi_\\Downloads\\BT3-UDE-C3-Online-Candidata-0.1.39.6\\diagnosticos-defesa\\partida-20261106-224145-32988.bt3trace",
+      "sha256": "d7a3583cd6d510049780448890570d6b5d486dcb348b7f0a692d77d9db87fc5e",
+      "records": 708688,
+      "record_kinds": {
+        "16": 9,
+        "12": 227045,
+        "13": 231972,
+        "14": 100433,
+        "0": 144302,
+        "24": 391,
+        "27": 383,
+        "28": 349,
+        "29": 349,
+        "10": 880,
+        "23": 1275,
+        "22": 759,
+        "26": 541
+      },
+      "pad_filter_samples": 144302,
+      "samples_with_output_changed": 13705,
+      "samples_with_physical_bits_removed": 9932,
+      "native_calls_accepted": {
+        "deflect": 34,
+        "projectile_evade": 8,
+        "guard_or_Z": 134,
+        "Sonic_Sway": 446,
+        "dodge_or_Sway": 70,
+        "throw_break": 8,
+        "Z_counter": 84
+      },
+      "native_calls_refused": {
+        "projectile_evade": 383,
+        "deflect": 349,
+        "reflect": 349,
+        "absorb": 349,
+        "dodge_or_Sway": 759,
+        "guard_or_Z": 541,
+        "throw_break": 533
+      },
+      "window_transitions_to_minus1": 4831,
+      "db1_fully_replayable_rows": 0,
+      "db1_interventions": null,
+      "db1_successes": null,
+      "scope": "C3 observations, possibly mixed offline/online epochs. Accepted native calls include manual and legacy effects. Repeated VBlank samples and -1 transitions are NOT automatically wasted assistant taps.",
+      "db1_missing": [
+        "pre-input contact ETA",
+        "complete recipe snapshot and manual ownership state",
+        "per-decision configuration"
+      ],
+      "flag_success_mapping": "Resolver observations are reported by kind/result, not invented raw flags 0x12C/0x79/0x7B/0x6B."
+    },
+    {
+      "file": "C:\\Users\\isakhi_\\Downloads\\BT3-UDE-C3-Online-Candidata-0.1.39.6\\diagnosticos-defesa\\partida-20261106-235516-34404.bt3trace",
+      "sha256": "8fbc6405cd6def9ec0e82cca91e9bc4e610be9bc81900f5942acb25aa3608bb1",
+      "records": 484063,
+      "record_kinds": {
+        "15": 69,
+        "16": 8,
+        "12": 170324,
+        "13": 177471,
+        "14": 17782,
+        "0": 111262,
+        "23": 1838,
+        "22": 1073,
+        "26": 738,
+        "10": 1218,
+        "24": 603,
+        "27": 587,
+        "28": 545,
+        "29": 545
+      },
+      "pad_filter_samples": 111262,
+      "samples_with_output_changed": 13713,
+      "samples_with_physical_bits_removed": 9366,
+      "native_calls_accepted": {
+        "dodge_or_Sway": 77,
+        "Sonic_Sway": 688,
+        "guard_or_Z": 239,
+        "Z_counter": 96,
+        "deflect": 42,
+        "throw_break": 2,
+        "projectile_evade": 16
+      },
+      "native_calls_refused": {
+        "dodge_or_Sway": 1073,
+        "guard_or_Z": 738,
+        "throw_break": 736,
+        "projectile_evade": 587,
+        "deflect": 545,
+        "reflect": 545,
+        "absorb": 545
+      },
+      "window_transitions_to_minus1": 5784,
+      "db1_fully_replayable_rows": 0,
+      "db1_interventions": null,
+      "db1_successes": null,
+      "scope": "C3 observations, possibly mixed offline/online epochs. Accepted native calls include manual and legacy effects. Repeated VBlank samples and -1 transitions are NOT automatically wasted assistant taps.",
+      "db1_missing": [
+        "pre-input contact ETA",
+        "complete recipe snapshot and manual ownership state",
+        "per-decision configuration"
+      ],
+      "flag_success_mapping": "Resolver observations are reported by kind/result, not invented raw flags 0x12C/0x79/0x7B/0x6B."
+    }
+  ],
+  "db1_logs": [],
+  "runtime_defense_success_comparison": null,
+  "limitation": "No counterfactual native acceptance can be deduced from logs of a different policy."
+}

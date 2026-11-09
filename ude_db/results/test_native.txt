@@ -1,0 +1,1 @@
+native_records=26243 native_checks=472468 temporal_updates=3000 auto_presses=84 wasted_taps=0 failed=0
