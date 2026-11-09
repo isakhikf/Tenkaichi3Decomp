@@ -21,6 +21,11 @@ jobs:
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
+      - name: UDE-DB1 generated data, native bodies, policy and adapter tests
+        run: |
+          python3 tools/defense_db/build.py
+          python3 tools/defense_db/build.py --check
+          python3 port/tests/ude_db/run_tests.py
       - name: UDE host tests (unit, logic simulation, property campaigns, database-driven)
         run: |
           set -e
@@ -52,7 +57,10 @@ jobs:
         if: always()
         with:
           name: ude-test-results
-          path: port/tests/ude/results_*
+          path: |
+            port/tests/ude/results_*
+            port/tests/ude_db/results/*.txt
+            port/tests/ude_db/results/*.json
 
   build:
     needs: engine-tests
@@ -73,6 +81,8 @@ jobs:
           mkdir -p port/build
           docker run --rm -u "$(id -u):$(id -g)" -e HOME=/tmp -v "$PWD":/src -w /src \
             bt3-port-release:jammy sh port/release/inside.sh 2>&1 | tee port/build/ude_build_log.txt
+      - name: Candidate settings and offline DB1 guide
+        run: python3 tools/defense_db/package.py
       - name: Verify the build (link, package contents, defense assist symbols, hashes)
         run: |
           set -e
@@ -85,9 +95,12 @@ jobs:
             grep -q " $f$" zip_contents.txt || { echo "missing in the zip: $f"; exit 1; }
           done
           docker run --rm -v "$PWD":/b -w /b bt3-port-release:jammy sh -c \
-            'x86_64-w64-mingw32-nm bt3.exe 2>/dev/null | grep -E " T (PortUde_Filter|BtlHit_PortUdeQuery|BtlHit_PortUdeRecipe|BtlCharApi_PortBlastEta10|UdeTel_Frame|Ude_Step|UdeRecipe_Step)" || strings bt3.exe | grep -m1 "defense assist"' \
+            'x86_64-w64-mingw32-nm bt3.exe 2>/dev/null | grep -E " T (PortUdeDb_Filter|UdeDb_Choose|UdeDb_Step|BtlHit_PortUdeDbQuery|PortUde_Filter|BtlHit_PortUdeQuery|BtlHit_PortUdeRecipe|BtlCharApi_PortBlastEta10|UdeTel_Frame|Ude_Step|UdeRecipe_Step)" || strings bt3.exe | grep -m1 "UDE-DB1"' \
             | tee ude_symbols.txt
           test -s ude_symbols.txt
+          for symbol in PortUdeDb_Filter UdeDb_Choose UdeDb_Step BtlHit_PortUdeDbQuery; do
+            grep -q "$symbol" ude_symbols.txt || { echo "missing DB1 symbol: $symbol"; exit 1; }
+          done
           { echo "commit $GITHUB_SHA"; echo "run $GITHUB_RUN_ID"; sha256sum Tenkaichi3Decomp-windows-x64.zip Tenkaichi3Decomp-linux-x64.zip bt3.exe; } | tee ude_artifact_hashes.txt
       - uses: actions/upload-artifact@v4
         if: always()

@@ -1,0 +1,85 @@
+# PROMPT — Banco de dados de defesas do BT3 + motor de defesa (UDE-DB)
+
+> Cole este prompt no Codex junto com `bt3_defesas_db.json` (e, se quiser, `bt3_defesas_tecnicas.csv`).
+> Pasta de trabalho: `C:\Users\isakhi_\Downloads\BT3-UDE-C3-Online-Candidata-0.1.39.6` (port 0.1.39.6, UDE C3).
+
+---
+
+## 1. Papel
+
+Você é um engenheiro de reversa trabalhando no **Tenkaichi3Decomp** (port nativo do DBZ Budokai Tenkaichi 3, PS2 NTSC-U SLUS-21678). Sua tarefa é transformar o banco de dados de defesas anexado (`bt3_defesas_db.json`) em uma **fonte única, verificada contra o código do jogo**, e usá-la para alimentar o motor de defesa offline (UDE) como uma **candidata nova e separada**, chamada `UDE-DB1`.
+
+## 2. Regras invioláveis (leia antes de qualquer edição)
+
+1. **Somente offline.** O motor não age com `Port_NetActive()`, em replay, no lado da CPU ou com o tempo parado (já existe `UDE_R_ONLINE` / `UDE_R_REPLAY` / `UDE_R_CPU_SIDE` / `UDE_R_TIME_STOP` em `port/src/ude.h`; mantenha). Nada de netcode, lobby ou rollback.
+2. **Prioridade absoluta para o input físico.** O motor só **adiciona** bits legais (GUARD, UP+RUSH, GUARD+BLAST, GUARD+lado, DASH+lado); **nunca limpa** bits físicos e fica fora enquanto houver input manual (`manual_grace`, `manual_claim`, `request_guard`).
+3. **Não escrever na memória do jogo.** A única saída é a palavra de botões do próprio lutador, pelo caminho de `BtlInput_BuildRecord` (o mesmo caminho da CPU: `BtlCharApi_SetInjectedInput`).
+4. **Intocáveis:** baseline 0.1.39.2, R7, R9-H1 (congelado), C3 atual. Tudo novo vai em arquivos/flags novos (`port/src/ude_db*.{c,h}`, `port/tests/ude_db/*`), desligado por padrão, atrás de um toggle próprio.
+5. **Sem mudar** tick (30 Hz), 60 fps, frames de golpes, dados do disco ou tabelas do jogo.
+6. **Mudanças mínimas, medidas e com evidência.** Cada afirmação nova no banco precisa de `arquivo:função` (ou endereço) e nível de confiança. Hipóteses falhas não são mescladas em outras candidatas.
+7. Os testes manuais finais (controle físico) são feitos pelo usuário. Não declare nada "homologado".
+
+## 3. O que o banco já contém (resumo do JSON)
+
+- **Janelas de defesa** (`BtlMove_UpdateDefenseTimers`, `src/battle/btl_char_move.c`), todas em frames de 1/30 s:
+
+| Offset | Janela | Abre com | Duração | Usada em |
+|---|---|---|---|---|
+| +0x1068 | EVADE (Vanish) | toque fresco de GUARD (cond. 39) + flag 5 | 4 / 3 / 2 por faixa de vida (≥70% / 30–70% / <30%) | `BtlHit_CheckDodge` |
+| +0x106C | BLAST EVADE | cond. 39 + flag 5 | 2 (4 com flag 0x138) | `BtlColl_TryDodge` |
+| +0x1070 | COUNTER (Z-Counter) | UP + RUSH frescos (cond. 38) | 1 | `BtlHit_CheckGuard` → resultado 8 |
+| +0x1074 | PERFECT DEFLECT | GUARD + lado (cond. 43) e flags2 & 0x20 | 5 (piso −15) | `BtlColl_TryDeflect` |
+| +0x1078 | THROW BREAK | cond. 39 + flag 5 | 5 | `BtlHit_CheckThrowBreak` |
+| +0x107C | RUSH EVADE | cond. 39 + flag 5 | 2 (4 com 0x138) | `BtlHit_CheckRush` |
+| +0x1080 | portão do VANISH BEHIND | sobe sozinho; toque → −15 | ~16 frames | `BtlDecide_Main` (0x24) |
+
+- **Regra anti-mash:** a janela só reabre quando está no piso (−30). Um toque antes disso a joga para −1 e reinicia o cooldown (~29 frames). **Consequência para o motor: no máximo um toque de guarda a cada ~1,1 s, e só no frame certo; toque errado custa a próxima defesa.**
+- **21 técnicas** com input, condição, ação, janela, custo, requisitos, o que defende / não defende, evidência e confiança: GUARD_HOLD, GUARD_HIGH_LOW, VANISH_EVADE, Z_COUNTER, SONIC_SWAY, VANISHING_STEP, VANISH_BEHIND, BLAST_EVADE, RUSH_EVADE, THROW_BREAK, KI_DEFLECT, PERFECT_DEFLECT, REFLECT_ABSORB, SIDESTEP, DRAGON_DASH_ESCAPE, EMERGENCY_BLASTER_WAVE, ARMOR_REPEL, SKILL_DEFENSE, RECOVERY, CLASH_MASH, CLASH_PROMPT.
+- **Classes de ameaça** (MELEE, RUSH, TECHNIQUE, SKILL, CLASH, BLAST, THROW) com as famílias de ações do oponente e as defesas candidatas.
+- **Tabelas da comunidade** (SuperCombo): o que pode ser vanished / Z-countered por golpe e guarda certa por smash e nível de carga.
+- **Custos fixos**, flags-chave, habilidades (ids), referências a macros existentes e **perguntas abertas**.
+
+## 4. Tarefas
+
+### Fase 1 — Auditar o banco contra o código (somente leitura)
+Para **cada** entrada de `tecnicas[]` e `janelas_de_defesa`:
+1. Confirme no fonte da 0.1.39.6 (`git grep`/`rg`) que função, offset, condição de input e ação continuam iguais. Comece por:
+   `BtlMove_UpdateDefenseTimers`, `BtlHit_CheckDodge`, `BtlHit_CheckGuard`, `BtlHit_CheckThrowBreak`, `BtlHit_CheckRush`, `BtlColl_TryDodge`, `BtlColl_TryDeflect`, `BtlColl_TryReflect`, `BtlColl_TryAbsorb`, `BtlColl_TryGuard`, `BtlDecide_Main`, `BtlDecide_Attack`, `include/battle/btl_char_ctl.h` (tabela das 114 condições), `include/battle/btl_act_i.h`.
+2. Marque cada campo como `ok`, `divergente` (com o valor real) ou `não encontrado`. Não “corrija” por intuição.
+3. Resolva as `perguntas_abertas` que forem possíveis só lendo código/dados. Prioridade máxima: **dump da tabela de 0xA3 registros de ataque** (battle object +0x920, acessores `func_0020Dxxx`, `BtlAtk_GetFlags`, `BtlAtk_GetGuardKindA/B/C/E`) gerando, por attack id: flags (bit 1 esquivável, 0x4000000, 0x100000, 0x800000, 0x1000000), resultado de guarda por tipo de guarda, prioridade de troca. Faça isso com uma ferramenta offline que lê os dados extraídos pelo `install.py` (sem modificar nada do jogo).
+4. Saída: `ude_db/AUDIT.md` (tabela técnica × campo × status × evidência) e `bt3_defesas_db.json` versão 1.1 com os campos novos (`attack_records[]`).
+
+### Fase 2 — Gerar artefatos a partir do banco
+1. `tools/defense_db/build.py`: lê o JSON e (a) mescla em `bt3_combat_database.sqlite` (tabelas `technique`, `window`, `threat_class`, `attack_record`, `evidence`), (b) gera `port/src/ude_db_tab.h` (tabelas `static const`, sem alocação), no mesmo estilo de `ude_policy_tab.h`. Arquivos gerados têm cabeçalho “Do not edit”.
+2. Teste que falha se o JSON e o header divergirem (como `check_recipe_ids.py`).
+
+### Fase 3 — Política de defesa dirigida pelo banco (candidata `UDE-DB1`)
+Implemente `UdeDb_Choose(snapshot) -> {recipe, press_frame, reason}` em C escalar puro, sem headers do jogo, usando só os campos que o `UdeSnapshot`/receitas já leem (janelas, flags, anim flags, attack id/flags, ETA de blast, distância, ki, vida, lock-on, por trás). Ordem de decisão sugerida (a primeira válida vence; tudo configurável):
+
+1. **Não agir:** online/replay/CPU/time stop, input manual recente, pedido de ação pendente, janela em cooldown (toque agora quebraria a próxima), sem lock-on para receitas de toque, ameaça por trás quando a defesa exige frente.
+2. **THROW** (attack id 0x55 ou grab 0xB4..0xB6) de frente com anim 0x31 → THROW_BREAK (toque no frame de contato).
+3. **RUSH-técnica em dash** → RUSH_EVADE (toque com contato a ≤ `tap_lead` frames); se agarrão (0xA5) → THROW_BREAK.
+4. **TECHNIQUE / beam** no 1º contato, anim 0xB1 → BLAST_EVADE; senão GUARD_HOLD de frente; a distância, opcional DRAGON_DASH_ESCAPE (desligado por padrão).
+5. **BLAST (ki blast)**: personagem com flags2 & 0x20 → KI_DEFLECT / PERFECT_DEFLECT; senão GUARD_HOLD.
+6. **MELEE 1º hit**: ataque esquivável (flag 1) e janela no piso → VANISH_EVADE; personagem com flags2 & 0x80 e rush combo (id < 0xB) → SONIC_SWAY; caso contrário GUARD_HOLD com a altura certa (GUARD_HIGH_LOW pela tabela de guard kinds do registro).
+7. **MELEE hits seguintes**: GUARD_HOLD (as janelas não valem depois do 1º hit).
+8. **Derrubado/blow-away**: RECOVERY só se `recover` estiver ligado.
+9. **CLASH / prompts / skills / transformação / Emergency Blaster Wave / Vanish behind (gasta 20000 ki)**: nunca automáticos nesta candidata.
+
+Regras de temporização: um toque por janela, no frame em que `contato_eta ≤ tap_lead` e a janela está em −30; soltar no frame seguinte (borda fresca); nunca dois toques dentro de 30 frames. Registre por que cada defesa **não** foi usada (`UdeReason`).
+
+### Fase 4 — Validação
+1. Testes unitários em `port/tests/ude_db/` para cada técnica: snapshot sintético → pacote esperado (incluindo casos negativos: por trás, sem lock-on, cooldown, input manual, online).
+2. Replay dos logs reais (`port/tests/ude/data/real_c5_ude_log.csv` e novos logs C3) comparando C3 × UDE-DB1: intervenções, defesas bem-sucedidas (flag 0x12C, 0x79, 0x7B, 0x6B), toques desperdiçados (janela → −1), frames de input manual sobrescritos (**deve ser 0**).
+3. Build Windows x64 pelo workflow existente (`ude-build.yml`) em branch nova `ude-db1`, sem tocar `ude-integration`, `ude-v4`, `ude-hybrid-v5`.
+4. Roteiro de teste manual (para o usuário) no modo treino contra CPU nível 29: 10 tentativas por técnica, anotando sucesso / falha / interferência no input.
+
+## 5. Entregáveis
+- `bt3_defesas_db.json` v1.1 + `ude_db/AUDIT.md`
+- `tools/defense_db/build.py`, `port/src/ude_db_tab.h` (gerado), `port/src/ude_db.{c,h}`
+- `port/tests/ude_db/*` com resultados
+- `ude_db/CHANGELOG.md` com cada mudança: arquivo, motivo, evidência, como reverter
+- Relatório final curto: o que foi confirmado, o que divergiu, o que ficou em aberto, números da validação
+
+## 6. Formato da resposta
+Comece por um plano curto. Antes de editar qualquer arquivo fora de `ude_db*`, pare e peça confirmação. Ao terminar cada fase, mostre a tabela de status e os comandos que rodou. Se algo do banco não bater com o código, **o código vence** e o banco é atualizado com a evidência.

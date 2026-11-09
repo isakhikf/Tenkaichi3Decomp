@@ -1616,6 +1616,7 @@ extern s32 BtlColl_IsFacing(HitChr *chr, f32 yaw);
 extern f32 BtlColl_GetHitDir(HitChr *chr, void *hit, Vec4 *outDir);
 extern void *EftHit_GetList(void);
 extern s32 EftHit_CanHit(void *rec, s32 mode);
+extern s32 EftHit_GetHitCount(void *rec); /* DB1-only admission query, read-only */
 extern s32 BtlKiBlast_GetFlagsOfHit(void *rec);
 extern s32 BtlKiBlast_GetTypeOfHit(void *rec);
 extern s32 BtlSkill_GetFlags(HitChr *chr, s32 slot);
@@ -1642,6 +1643,7 @@ typedef struct UrIncoming {
     void *hit;
     f32 eta;
     s32 tech, charged, behind, redirect, absorb, evadable, skill;
+    s32 db1PriorHits; /* populated only for DB1; old recipes leave it zero */
 } UrIncoming;
 
 static s32 sUdeRecipe[2][UR_COUNT];
@@ -1884,11 +1886,12 @@ static UrIncoming ur_merge(UrIncoming *contacts, s32 count) {
             best.redirect &= contacts[i].redirect;
             best.absorb &= contacts[i].absorb;
             best.evadable &= contacts[i].evadable;
+            if (contacts[i].db1PriorHits > best.db1PriorHits) best.db1PriorHits = contacts[i].db1PriorHits;
         }
     }
     return best;
 }
-static UrIncoming ur_incoming_hit(HitChr *c, f32 limit) {
+static UrIncoming ur_incoming_hit_mode(HitChr *c, f32 limit, s32 db1) {
     UrIncoming contacts[64], none;
     u8 *list = (u8 *)EftHit_GetList();
     s32 i, n, count = 0;
@@ -1924,6 +1927,7 @@ static UrIncoming ur_incoming_hit(HitChr *c, f32 limit) {
         in = &contacts[count++];
         __builtin_memset(in, 0, sizeof *in);
         in->hit = h;
+        if (db1) in->db1PriorHits = EftHit_GetHitCount(h);
         in->eta = t;
         in->tech = tech;
         in->charged = !tech && kind != 0 && kind != 4 && kind != 8;
@@ -1941,6 +1945,24 @@ static UrIncoming ur_incoming_hit(HitChr *c, f32 limit) {
         }
     }
     return ur_merge(contacts, count);
+}
+static UrIncoming ur_incoming_hit(HitChr *c, f32 limit) {
+    return ur_incoming_hit_mode(c, limit, 0);
+}
+
+/* DB1-only additional reads authorized on 2026-11-09. The nearest contact
+   cohort is the same <=0.5-update group as the existing recipe snapshot. A
+   previously landed hit in ANY member prevents a first-contact evasion. */
+s32 BtlHit_PortUdeDbQuery(s32 player, s32 what) {
+    HitChr *c;
+    UrIncoming inc;
+    if (player < 0 || player > 1) return -1;
+    c = BtlChar_Get(player);
+    if (c == NULL || BtlChar_GetObj(c) == NULL) return -1;
+    if (what == 0) return BtlChar_TestFlag(c, 0x41) != 0;
+    if (what != 1) return -1;
+    inc = ur_incoming_hit_mode(c, 1000.0f, 1);
+    return inc.hit != NULL ? inc.db1PriorHits : -1;
 }
 static s32 ur_inc_bits(const UrIncoming *in) {
     if (in->hit == NULL) return 0;

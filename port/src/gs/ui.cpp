@@ -2519,22 +2519,24 @@ static bool save_icon_on(Uint64 now) {
 // fight: "DEF ON" (green), "DEF OFF" (grey), "DEF --" (amber: suspended, e.g. online, replay or a refused guard).
 // Hidden when the fight is not running (the engine's call counter stopped moving for half a second). ude_indicator=0
 // turns it off.
-extern "C" int PortUde_Indicator(void);
-extern "C" unsigned PortUde_Stamp(void);
+extern "C" int PortUdeDb_Indicator(void);
+extern "C" unsigned PortUdeDb_Stamp(void);
+extern "C" int PortUdeDb_Active(void);
 static int ude_mode(void) {
     static unsigned last;
     static Uint64 at;
-    unsigned stamp = PortUde_Stamp();
+    unsigned stamp = PortUdeDb_Stamp();
     Uint64 t = SDL_GetTicks();
     if (stamp != last) {
         last = stamp;
         at = t;
     }
-    return t - at > 500 ? -1 : PortUde_Indicator();
+    return t - at > 500 ? -1 : PortUdeDb_Indicator();
 }
 static void ude_draw(int mode) {
     ImDrawList *dl = ImGui::GetForegroundDrawList();
-    const char *text = mode == 1 ? "DEF ON" : mode == 2 ? "DEF --" : "DEF OFF";
+    const char *text = PortUdeDb_Active() ? (mode == 1 ? "DB1 ON" : mode == 2 ? "DB1 --" : "DB1 OFF") :
+                                        (mode == 1 ? "DEF ON" : mode == 2 ? "DEF --" : "DEF OFF");
     ImU32 col = mode == 1 ? IM_COL32(120, 230, 120, 230) : mode == 2 ? IM_COL32(240, 190, 80, 230) : IM_COL32(170, 170, 170, 200);
     float size = (float)gUiPresentH * 0.028f;
     float x = (float)gUiPresentX + size * 0.8f, y = (float)(gUiPresentY + gUiPresentH) - size * 1.8f;

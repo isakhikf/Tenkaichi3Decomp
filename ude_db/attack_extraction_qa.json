@@ -1,0 +1,1933 @@
+{
+  "records": 26243,
+  "characters": 161,
+  "records_per_character": 163,
+  "record_size": 48,
+  "catalog_fields_compared": 36,
+  "source_files_matched": 155,
+  "pack_files_matched": 161,
+  "c3_sqlite_records_matched": 26243,
+  "c3_header_records_matched": 26243,
+  "flag_counts": {
+    "0x1": 18998,
+    "0x4000000": 644,
+    "0x100000": 1449,
+    "0x800000": 483,
+    "0x1000000": 483
+  },
+  "source_checks": [
+    {
+      "path": "port/data/cod_1C3400.data.s",
+      "match": true
+    },
+    {
+      "path": "src/battle/battle.c",
+      "match": true
+    },
+    {
+      "path": "src/battle/battle_load.c",
+      "match": true
+    },
+    {
+      "path": "src/battle/battle_work.c",
+      "match": true
+    },
+    {
+      "path": "src/battle/bobj_a.c",
+      "match": true
+    },
+    {
+      "path": "src/battle/bobj_b_b.c",
+      "match": true
+    },
+    {
+      "path": "src/battle/btl_act_a.c",
+      "match": true
+    },
+    {
+      "path": "src/battle/btl_act_c.c",
+      "match": true
+    },
+    {
+      "path": "src/battle/btl_act_d.c",
+      "match": true
+    },
+    {
+      "path": "src/battle/btl_act_e.c",
+      "match": true
+    },
+    {
+      "path": "src/battle/btl_act_f.c",
+      "match": true
+    },
+    {
+      "path": "src/battle/btl_act_h.c",
+      "match": true
+    },
+    {
+      "path": "src/battle/btl_act_h_b.c",
+      "match": true
+    },
+    {
+      "path": "src/battle/btl_act_j.c",
+      "match": true
+    },
+    {
+      "path": "src/battle/btl_ai_act.c",
+      "match": true
+    },
+    {
+      "path": "src/battle/btl_ai_cond.c",
+      "match": true
+    },
+    {
+      "path": "src/battle/btl_ai_mgr.c",
+      "match": true
+    },
+    {
+      "path": "src/battle/btl_ai_seq.c",
+      "match": true
+    },
+    {
+      "path": "src/battle/btl_cam.c",
+      "match": true
+    },
+    {
+      "path": "src/battle/btl_capi_a.c",
+      "match": true
+    },
+    {
+      "path": "src/battle/btl_capi_b.c",
+      "match": true
+    },
+    {
+      "path": "src/battle/btl_char_action.c",
+      "match": true
+    },
+    {
+      "path": "src/battle/btl_char_api.c",
+      "match": true
+    },
+    {
+      "path": "src/battle/btl_char_cam.c",
+      "match": true
+    },
+    {
+      "path": "src/battle/btl_char_cam_cut.c",
+      "match": true
+    },
+    {
+      "path": "src/battle/btl_char_cam_modes.c",
+      "match": true
+    },
+    {
+      "path": "src/battle/btl_char_coll_b.c",
+      "match": true
+    },
+    {
+      "path": "src/battle/btl_char_ctl_b.c",
+      "match": true
+    },
+    {
+      "path": "src/battle/btl_char_ctl_c.c",
+      "match": true
+    },
+    {
+      "path": "src/battle/btl_char_ctl_d.c",
+      "match": true
+    },
+    {
+      "path": "src/battle/btl_char_flag.c",
+      "match": true
+    },
+    {
+      "path": "src/battle/btl_char_flag_clash.c",
+      "match": true
+    },
+    {
+      "path": "src/battle/btl_char_flag_opp.c",
+      "match": true
+    },
+    {
+      "path": "src/battle/btl_char_flag_snd.c",
+      "match": true
+    },
+    {
+      "path": "src/battle/btl_char_fx.c",
+      "match": true
+    },
+    {
+      "path": "src/battle/btl_char_fx_c.c",
+      "match": true
+    },
+    {
+      "path": "src/battle/btl_char_get.c",
+      "match": true
+    },
+    {
+      "path": "src/battle/btl_char_hit.c",
+      "match": true
+    },
+    {
+      "path": "src/battle/btl_char_member.c",
+      "match": true
+    },
+    {
+      "path": "src/battle/btl_char_mgr.c",
+      "match": true
+    },
+    {
+      "path": "src/battle/btl_char_move.c",
+      "match": true
+    },
+    {
+      "path": "src/battle/btl_char_status.c",
+      "match": true
+    },
+    {
+      "path": "src/battle/btl_char_status_anim.c",
+      "match": true
+    },
+    {
+      "path": "src/battle/btl_demo_cam.c",
+      "match": true
+    },
+    {
+      "path": "src/battle/btl_facade.c",
+      "match": true
+    },
+    {
+      "path": "src/battle/btl_input.c",
+      "match": true
+    },
+    {
+      "path": "src/battle/btl_obj.c",
+      "match": true
+    },
+    {
+      "path": "src/battle/btl_pool.c",
+      "match": true
+    },
+    {
+      "path": "src/battle/btl_replay.c",
+      "match": true
+    },
+    {
+      "path": "src/battle/btl_scene.c",
+      "match": true
+    },
+    {
+      "path": "src/battle/btl_script.c",
+      "match": true
+    },
+    {
+      "path": "src/battle/btl_script_cmd.c",
+      "match": true
+    },
+    {
+      "path": "src/battle/btl_seq.c",
+      "match": true
+    },
+    {
+      "path": "src/battle/btl_tech_a.c",
+      "match": true
+    },
+    {
+      "path": "src/battle/btl_tech_b.c",
+      "match": true
+    },
+    {
+      "path": "src/battle/col_a.c",
+      "match": true
+    },
+    {
+      "path": "src/battle/col_b.c",
+      "match": true
+    },
+    {
+      "path": "src/battle/col_c.c",
+      "match": true
+    },
+    {
+      "path": "src/battle/col_c_b.c",
+      "match": true
+    },
+    {
+      "path": "src/battle/eft_a.c",
+      "match": true
+    },
+    {
+      "path": "src/battle/eft_aa.c",
+      "match": true
+    },
+    {
+      "path": "src/battle/eft_ab.c",
+      "match": true
+    },
+    {
+      "path": "src/battle/eft_ab_b.c",
+      "match": true
+    },
+    {
+      "path": "src/battle/eft_ab_c.c",
+      "match": true
+    },
+    {
+      "path": "src/battle/eft_ad.c",
+      "match": true
+    },
+    {
+      "path": "src/battle/eft_ad_b.c",
+      "match": true
+    },
+    {
+      "path": "src/battle/eft_ad_c.c",
+      "match": true
+    },
+    {
+      "path": "src/battle/eft_ae.c",
+      "match": true
+    },
+    {
+      "path": "src/battle/eft_b.c",
+      "match": true
+    },
+    {
+      "path": "src/battle/eft_c.c",
+      "match": true
+    },
+    {
+      "path": "src/battle/eft_d.c",
+      "match": true
+    },
+    {
+      "path": "src/battle/eft_d_b.c",
+      "match": true
+    },
+    {
+      "path": "src/battle/eft_det_a.c",
+      "match": true
+    },
+    {
+      "path": "src/battle/eft_det_b.c",
+      "match": true
+    },
+    {
+      "path": "src/battle/eft_det_b_b.c",
+      "match": true
+    },
+    {
+      "path": "src/battle/eft_det_b_c.c",
+      "match": true
+    },
+    {
+      "path": "src/battle/eft_e.c",
+      "match": true
+    },
+    {
+      "path": "src/battle/eft_g.c",
+      "match": true
+    },
+    {
+      "path": "src/battle/eft_h.c",
+      "match": true
+    },
+    {
+      "path": "src/battle/eft_i.c",
+      "match": true
+    },
+    {
+      "path": "src/battle/eft_j.c",
+      "match": true
+    },
+    {
+      "path": "src/battle/eft_k.c",
+      "match": true
+    },
+    {
+      "path": "src/battle/eft_l_b.c",
+      "match": true
+    },
+    {
+      "path": "src/battle/eft_l_c.c",
+      "match": true
+    },
+    {
+      "path": "src/battle/eft_l_d.c",
+      "match": true
+    },
+    {
+      "path": "src/battle/eft_m.c",
+      "match": true
+    },
+    {
+      "path": "src/battle/eft_n.c",
+      "match": true
+    },
+    {
+      "path": "src/battle/eft_o.c",
+      "match": true
+    },
+    {
+      "path": "src/battle/eft_o_b.c",
+      "match": true
+    },
+    {
+      "path": "src/battle/eft_o_c.c",
+      "match": true
+    },
+    {
+      "path": "src/battle/eft_p.c",
+      "match": true
+    },
+    {
+      "path": "src/battle/eft_p_b.c",
+      "match": true
+    },
+    {
+      "path": "src/battle/eft_q.c",
+      "match": true
+    },
+    {
+      "path": "src/battle/eft_r.c",
+      "match": true
+    },
+    {
+      "path": "src/battle/eft_s.c",
+      "match": true
+    },
+    {
+      "path": "src/battle/eft_t_b.c",
+      "match": true
+    },
+    {
+      "path": "src/battle/eft_t_c.c",
+      "match": true
+    },
+    {
+      "path": "src/battle/eft_u_b.c",
+      "match": true
+    },
+    {
+      "path": "src/battle/eft_v_b.c",
+      "match": true
+    },
+    {
+      "path": "src/battle/eft_v_c.c",
+      "match": true
+    },
+    {
+      "path": "src/battle/eft_w.c",
+      "match": true
+    },
+    {
+      "path": "src/battle/eft_x.c",
+      "match": true
+    },
+    {
+      "path": "src/battle/eft_x_b.c",
+      "match": true
+    },
+    {
+      "path": "src/battle/eft_x_c.c",
+      "match": true
+    },
+    {
+      "path": "src/battle/eft_y.c",
+      "match": true
+    },
+    {
+      "path": "src/battle/eft_z.c",
+      "match": true
+    },
+    {
+      "path": "src/battle/eft_z_b.c",
+      "match": true
+    },
+    {
+      "path": "src/battle/eft_z_c.c",
+      "match": true
+    },
+    {
+      "path": "src/battle/hud_0.c",
+      "match": true
+    },
+    {
+      "path": "src/battle/hud_0_b.c",
+      "match": true
+    },
+    {
+      "path": "src/battle/hud_0_c.c",
+      "match": true
+    },
+    {
+      "path": "src/battle/hud_a.c",
+      "match": true
+    },
+    {
+      "path": "src/battle/hud_a_b.c",
+      "match": true
+    },
+    {
+      "path": "src/battle/hud_a_c.c",
+      "match": true
+    },
+    {
+      "path": "src/battle/hud_a_d.c",
+      "match": true
+    },
+    {
+      "path": "src/battle/hud_b.c",
+      "match": true
+    },
+    {
+      "path": "src/battle/hud_c.c",
+      "match": true
+    },
+    {
+      "path": "src/battle/hud_c_b.c",
+      "match": true
+    },
+    {
+      "path": "src/battle/hud_c_c.c",
+      "match": true
+    },
+    {
+      "path": "src/battle/hud_d.c",
+      "match": true
+    },
+    {
+      "path": "src/battle/hud_d_b.c",
+      "match": true
+    },
+    {
+      "path": "src/battle/hud_e.c",
+      "match": true
+    },
+    {
+      "path": "src/battle/hud_e_b.c",
+      "match": true
+    },
+    {
+      "path": "src/battle/hud_e_c.c",
+      "match": true
+    },
+    {
+      "path": "src/battle/hud_e_d.c",
+      "match": true
+    },
+    {
+      "path": "src/battle/hud_e_e.c",
+      "match": true
+    },
+    {
+      "path": "src/battle/orbit_cam.c",
+      "match": true
+    },
+    {
+      "path": "src/battle/stg_a.c",
+      "match": true
+    },
+    {
+      "path": "src/battle/stg_a_b.c",
+      "match": true
+    },
+    {
+      "path": "src/battle/stg_b.c",
+      "match": true
+    },
+    {
+      "path": "src/battle/stg_c.c",
+      "match": true
+    },
+    {
+      "path": "src/battle/stg_d.c",
+      "match": true
+    },
+    {
+      "path": "src/battle/stg_d_b.c",
+      "match": true
+    },
+    {
+      "path": "src/battle/stgm_a.c",
+      "match": true
+    },
+    {
+      "path": "src/battle/stgm_a_b.c",
+      "match": true
+    },
+    {
+      "path": "src/battle/view_a.c",
+      "match": true
+    },
+    {
+      "path": "src/battle/view_a_b.c",
+      "match": true
+    },
+    {
+      "path": "src/battle/view_a_c.c",
+      "match": true
+    },
+    {
+      "path": "src/battle/view_a_d.c",
+      "match": true
+    },
+    {
+      "path": "src/battle/view_a_e.c",
+      "match": true
+    },
+    {
+      "path": "src/battle/view_b.c",
+      "match": true
+    },
+    {
+      "path": "src/battle/view_b_b.c",
+      "match": true
+    },
+    {
+      "path": "src/battle/view_b_c.c",
+      "match": true
+    },
+    {
+      "path": "src/battle/view_b_d.c",
+      "match": true
+    },
+    {
+      "path": "src/battle/view_b_e.c",
+      "match": true
+    },
+    {
+      "path": "include/battle/btl_input.h",
+      "match": true
+    },
+    {
+      "path": "include/battle/btl_tech_a.h",
+      "match": true
+    },
+    {
+      "path": "include/battle/btl_tech_b.h",
+      "match": true
+    },
+    {
+      "path": "include/battle/btl_act_i.h",
+      "match": true
+    },
+    {
+      "path": "include/battle/btl_char_ctl.h",
+      "match": true
+    },
+    {
+      "path": "include/battle/btl_char_action.h",
+      "match": true
+    },
+    {
+      "path": "include/battle/bobj_a.h",
+      "match": true
+    },
+    {
+      "path": "include/sys/file.h",
+      "match": true
+    },
+    {
+      "path": "src/sys/file.c",
+      "match": true
+    },
+    {
+      "path": "src/sys/bpe.c",
+      "match": true
+    }
+  ],
+  "file_checks": [
+    {
+      "character_id": 0,
+      "path": "pzs3us1/01423.bin",
+      "sha256": "744d05b524412a165f081d6df8a42b04bb80e491118428427f1b10f8126f1a33",
+      "entry": 19,
+      "offset": 627648,
+      "table_bytes": 8512
+    },
+    {
+      "character_id": 1,
+      "path": "pzs3us1/01433.bin",
+      "sha256": "9ff63390b4803d1521df955d3ca4da41dcc74e8e6970c94f8ee0dab79b1d1612",
+      "entry": 19,
+      "offset": 663104,
+      "table_bytes": 8512
+    },
+    {
+      "character_id": 2,
+      "path": "pzs3us1/01443.bin",
+      "sha256": "c8be63d76b7cef647007e5914fc28270ba3cf5949ef95eafa50e17a503a9402f",
+      "entry": 19,
+      "offset": 593344,
+      "table_bytes": 8512
+    },
+    {
+      "character_id": 3,
+      "path": "pzs3us1/01453.bin",
+      "sha256": "b4dd887d50833b50a5876e0b44c4e260696dbab123a351f84135a9c88fe33fd0",
+      "entry": 19,
+      "offset": 605248,
+      "table_bytes": 8512
+    },
+    {
+      "character_id": 4,
+      "path": "pzs3us1/01463.bin",
+      "sha256": "959917b8dd0b0703e92a8b4244b543ae13890c84cbccd7e09979728e34ae9da2",
+      "entry": 19,
+      "offset": 663296,
+      "table_bytes": 8512
+    },
+    {
+      "character_id": 5,
+      "path": "pzs3us1/01473.bin",
+      "sha256": "22724b367764a2befc130c4a26f653db860787cea47bde676953a37ecb914dd9",
+      "entry": 19,
+      "offset": 659008,
+      "table_bytes": 8512
+    },
+    {
+      "character_id": 6,
+      "path": "pzs3us1/01483.bin",
+      "sha256": "7b394467195adc0addbbfd908dd356850d4a082f38ca3bee1a36613b92fc5e05",
+      "entry": 19,
+      "offset": 591040,
+      "table_bytes": 8512
+    },
+    {
+      "character_id": 7,
+      "path": "pzs3us1/01493.bin",
+      "sha256": "6cf4cbbad0e6b9493a5b52334cc185b67763db1b37589187e8b1cdd0ef6d3b10",
+      "entry": 19,
+      "offset": 621312,
+      "table_bytes": 8512
+    },
+    {
+      "character_id": 8,
+      "path": "pzs3us1/01503.bin",
+      "sha256": "a66d8d42c0b688160d7237a1da59b003d3b20858f5e6ed053fb7a33f254945a6",
+      "entry": 19,
+      "offset": 623744,
+      "table_bytes": 8512
+    },
+    {
+      "character_id": 9,
+      "path": "pzs3us1/01513.bin",
+      "sha256": "dd4fab725a013c38d2719d714ef23260a7ed071694aa700ff99ebcc1d8a56dc1",
+      "entry": 19,
+      "offset": 654080,
+      "table_bytes": 8512
+    },
+    {
+      "character_id": 10,
+      "path": "pzs3us1/01523.bin",
+      "sha256": "d10ad51a9232a974147a9adf6f75075ccfbcbd756e4c23ae6ebe4f23b098c795",
+      "entry": 19,
+      "offset": 591936,
+      "table_bytes": 8512
+    },
+    {
+      "character_id": 11,
+      "path": "pzs3us1/01533.bin",
+      "sha256": "8b7f7a12d2c02d19db8fe1a7268dff89b5ba13796d2744296739b653f9b84969",
+      "entry": 19,
+      "offset": 646208,
+      "table_bytes": 8512
+    },
+    {
+      "character_id": 12,
+      "path": "pzs3us1/01543.bin",
+      "sha256": "9a0cec6e7215ebdaa318bb5ba7f180bedaaf12860bce213c593dcb0cb35c19e0",
+      "entry": 19,
+      "offset": 433024,
+      "table_bytes": 8512
+    },
+    {
+      "character_id": 13,
+      "path": "pzs3us1/01553.bin",
+      "sha256": "7ad0a87f9444992605a514446e60d6dbadb7ca7faed6a486d67e55c9f8084016",
+      "entry": 19,
+      "offset": 556416,
+      "table_bytes": 8512
+    },
+    {
+      "character_id": 14,
+      "path": "pzs3us1/01563.bin",
+      "sha256": "e13e055dca93ef1fbc1f4186af922ad020731fe1720b58fe42820885cc4cc5a8",
+      "entry": 19,
+      "offset": 581184,
+      "table_bytes": 8512
+    },
+    {
+      "character_id": 15,
+      "path": "pzs3us1/01573.bin",
+      "sha256": "f1563d37ee0869410654615f61219e108ae2e752a87522adcaf79feb761f5268",
+      "entry": 19,
+      "offset": 588800,
+      "table_bytes": 8512
+    },
+    {
+      "character_id": 16,
+      "path": "pzs3us1/01583.bin",
+      "sha256": "401d8d0d0c37042fd46e9815a87a7ebcfaa913cf1ebdb7ef341986b8f7126cee",
+      "entry": 19,
+      "offset": 640192,
+      "table_bytes": 8512
+    },
+    {
+      "character_id": 17,
+      "path": "pzs3us1/01593.bin",
+      "sha256": "530c06b4c7dda911aad824cb49517137fabc41d5288c9d69a96ddab4f1b29e26",
+      "entry": 19,
+      "offset": 577280,
+      "table_bytes": 8512
+    },
+    {
+      "character_id": 18,
+      "path": "pzs3us1/01603.bin",
+      "sha256": "2e9276b4a58ab712f0ba4e43e4cc59d2d25bff1c7986c8747dc2be9e1aff6545",
+      "entry": 19,
+      "offset": 593088,
+      "table_bytes": 8512
+    },
+    {
+      "character_id": 19,
+      "path": "pzs3us1/01613.bin",
+      "sha256": "1874adf022705542a58e98671f7e3c76fb582afac0a300e5f27feffffcfb51d8",
+      "entry": 19,
+      "offset": 600832,
+      "table_bytes": 8512
+    },
+    {
+      "character_id": 20,
+      "path": "pzs3us1/01623.bin",
+      "sha256": "24da30ac1a4fd8180525708450eacf033d3ff3abb8fe77ff14b183277294acfc",
+      "entry": 19,
+      "offset": 584640,
+      "table_bytes": 8512
+    },
+    {
+      "character_id": 21,
+      "path": "pzs3us1/01633.bin",
+      "sha256": "27700375eae6f07ed9b12f541bd72caf4beb8370e81246ec11d3628bed0a81dc",
+      "entry": 19,
+      "offset": 581568,
+      "table_bytes": 8512
+    },
+    {
+      "character_id": 22,
+      "path": "pzs3us1/01643.bin",
+      "sha256": "e616170114f4f0cd42eef932d94787335c7cc0dfcdc2250d5777c1f9a89c8ce4",
+      "entry": 19,
+      "offset": 558272,
+      "table_bytes": 8512
+    },
+    {
+      "character_id": 23,
+      "path": "pzs3us1/01653.bin",
+      "sha256": "83bd2fd8f90cb8ec2fbd8cc22ece990926f02a7aa0657fcd585c6826e6bfa4a5",
+      "entry": 19,
+      "offset": 557888,
+      "table_bytes": 8512
+    },
+    {
+      "character_id": 24,
+      "path": "pzs3us1/01663.bin",
+      "sha256": "15d4f1cf3e6a0cd3f71c88607cd009b7d2e0367e2c1718bcfb820d19658ae68f",
+      "entry": 19,
+      "offset": 623552,
+      "table_bytes": 8512
+    },
+    {
+      "character_id": 25,
+      "path": "pzs3us1/01673.bin",
+      "sha256": "97fb33ebbbc6ef2b5fec488f413ff8334d4998e355a9f99a07f160722ff3e80d",
+      "entry": 19,
+      "offset": 584768,
+      "table_bytes": 8512
+    },
+    {
+      "character_id": 26,
+      "path": "pzs3us1/01683.bin",
+      "sha256": "958e65cd61c733051f7962f0e6e56f7d22d8d970c8f3102ffebfc8a3289bd5b2",
+      "entry": 19,
+      "offset": 541632,
+      "table_bytes": 8512
+    },
+    {
+      "character_id": 27,
+      "path": "pzs3us1/01693.bin",
+      "sha256": "6890fafe73d28655cefbc519c0f0782dcb6e9a160cba3b1097c9ad7712b443d9",
+      "entry": 19,
+      "offset": 601472,
+      "table_bytes": 8512
+    },
+    {
+      "character_id": 28,
+      "path": "pzs3us1/01703.bin",
+      "sha256": "149a44b1f7ff0adc81de6e9f58b2ac72b79100d6fd8a70442d9d97aca3077310",
+      "entry": 19,
+      "offset": 514752,
+      "table_bytes": 8512
+    },
+    {
+      "character_id": 29,
+      "path": "pzs3us1/01713.bin",
+      "sha256": "e8908037a6cc1a1021e232c72f08ed488008bfbf104eec3a5269afabae6e6915",
+      "entry": 19,
+      "offset": 581184,
+      "table_bytes": 8512
+    },
+    {
+      "character_id": 30,
+      "path": "pzs3us1/01723.bin",
+      "sha256": "b4d17a6fb32df38dbb8a5a828371465d6129bf85fd90f793784b03b827e795e4",
+      "entry": 19,
+      "offset": 477824,
+      "table_bytes": 8512
+    },
+    {
+      "character_id": 31,
+      "path": "pzs3us1/01733.bin",
+      "sha256": "0d56b3680e2af5237d6ec5da69a8eb17b5ed0d0843214edb1de7d03b93df86ea",
+      "entry": 19,
+      "offset": 581824,
+      "table_bytes": 8512
+    },
+    {
+      "character_id": 32,
+      "path": "pzs3us1/01743.bin",
+      "sha256": "990a01d948a79c6e3f62880cb6ca1f75cffb70f137109560dababbd1257461c7",
+      "entry": 19,
+      "offset": 586688,
+      "table_bytes": 8512
+    },
+    {
+      "character_id": 33,
+      "path": "pzs3us1/01753.bin",
+      "sha256": "10397c5c6ce344551f3d200679d511ac3cc808e1274caa6ad20fcfb84cad35e7",
+      "entry": 19,
+      "offset": 587712,
+      "table_bytes": 8512
+    },
+    {
+      "character_id": 34,
+      "path": "pzs3us1/01763.bin",
+      "sha256": "ea780fadc14b6a712c4eea6b9a0b8f79811e33799aa3b1aca2addedb0c3ec581",
+      "entry": 19,
+      "offset": 583104,
+      "table_bytes": 8512
+    },
+    {
+      "character_id": 35,
+      "path": "pzs3us1/01773.bin",
+      "sha256": "b54bac3fd12e7d908057ec92ec3eaadc96000b1290ca341b429670855df2dfb0",
+      "entry": 19,
+      "offset": 582720,
+      "table_bytes": 8512
+    },
+    {
+      "character_id": 36,
+      "path": "pzs3us1/01783.bin",
+      "sha256": "6b4614bb05d81d5d10d5ac428b5c3eee5f51361f2d0fc65cd4e50723f7b05deb",
+      "entry": 19,
+      "offset": 582720,
+      "table_bytes": 8512
+    },
+    {
+      "character_id": 37,
+      "path": "pzs3us1/01793.bin",
+      "sha256": "b8cb85269253d227273dd166325d939b733efaafeaf7a4a0fea28586c1edc110",
+      "entry": 19,
+      "offset": 575616,
+      "table_bytes": 8512
+    },
+    {
+      "character_id": 38,
+      "path": "pzs3us1/01803.bin",
+      "sha256": "d1206e1afb0a0fdc23358eb110ea82147467e313664802d3606b0a02480b8945",
+      "entry": 19,
+      "offset": 556672,
+      "table_bytes": 8512
+    },
+    {
+      "character_id": 39,
+      "path": "pzs3us1/01813.bin",
+      "sha256": "a2e77de2d9c6af34085ea03ea4bed342fe779de968d28ac6ea6b17a905cb217b",
+      "entry": 19,
+      "offset": 612096,
+      "table_bytes": 8512
+    },
+    {
+      "character_id": 40,
+      "path": "pzs3us1/01823.bin",
+      "sha256": "ed619b5c5f9b7cb8c62678417bd1709b99c26e3123d0d128eb30b2428fa9d5d9",
+      "entry": 19,
+      "offset": 584512,
+      "table_bytes": 8512
+    },
+    {
+      "character_id": 41,
+      "path": "pzs3us1/01833.bin",
+      "sha256": "8795c393fdcb211b6403de8fb543a7fe70f765d655651c9d81d863b4677d0d91",
+      "entry": 19,
+      "offset": 589504,
+      "table_bytes": 8512
+    },
+    {
+      "character_id": 42,
+      "path": "pzs3us1/01843.bin",
+      "sha256": "12781d68c7a94f67f9c7742f6dfe3310768f894e9971da6e990aeeeab5fa2cb3",
+      "entry": 19,
+      "offset": 595456,
+      "table_bytes": 8512
+    },
+    {
+      "character_id": 43,
+      "path": "pzs3us1/01853.bin",
+      "sha256": "2be2728ab02713244c891a4cc8b8220b566af080557f062abcb10a88556e88df",
+      "entry": 19,
+      "offset": 596032,
+      "table_bytes": 8512
+    },
+    {
+      "character_id": 44,
+      "path": "pzs3us1/01863.bin",
+      "sha256": "2dc7fd8506688bc04ad9d83a4e6f19b50a66f9a53c4f6ae2fdec8f1c246400f9",
+      "entry": 19,
+      "offset": 586880,
+      "table_bytes": 8512
+    },
+    {
+      "character_id": 45,
+      "path": "pzs3us1/01873.bin",
+      "sha256": "69a865d7c1ceb4e11ed776396f00124ab8315e495dd9df6f10b73b9715399ff5",
+      "entry": 19,
+      "offset": 566144,
+      "table_bytes": 8512
+    },
+    {
+      "character_id": 46,
+      "path": "pzs3us1/01883.bin",
+      "sha256": "4ef826cef2a0a49384991d215338a177f104b57afde7a469fb7a8a174dddcdfc",
+      "entry": 19,
+      "offset": 569088,
+      "table_bytes": 8512
+    },
+    {
+      "character_id": 47,
+      "path": "pzs3us1/01893.bin",
+      "sha256": "38ea90ff6bbb79dbb7d589ede1fbe66f38552c60683922c90c9b493491f6a964",
+      "entry": 19,
+      "offset": 587712,
+      "table_bytes": 8512
+    },
+    {
+      "character_id": 48,
+      "path": "pzs3us1/01903.bin",
+      "sha256": "02b94a51ac83ca091c15bf1b9a19ecd15a917cd078805d45f98c00d851a4ba9e",
+      "entry": 19,
+      "offset": 569664,
+      "table_bytes": 8512
+    },
+    {
+      "character_id": 49,
+      "path": "pzs3us1/01913.bin",
+      "sha256": "a6c4097586f247673d7f7c3394634e8cc3b595f1d0eb8f2eecc1d91ee1730216",
+      "entry": 19,
+      "offset": 580928,
+      "table_bytes": 8512
+    },
+    {
+      "character_id": 50,
+      "path": "pzs3us1/01923.bin",
+      "sha256": "530a8ecf908da64e184b112b243577a4b0bb578d925ba8fe00327faa7bb4c4e5",
+      "entry": 19,
+      "offset": 599936,
+      "table_bytes": 8512
+    },
+    {
+      "character_id": 51,
+      "path": "pzs3us1/01933.bin",
+      "sha256": "fe5703d70795a48479e1717219ae17359eb6248d774fbf756f9b7fd86f3546e6",
+      "entry": 19,
+      "offset": 580480,
+      "table_bytes": 8512
+    },
+    {
+      "character_id": 52,
+      "path": "pzs3us1/01943.bin",
+      "sha256": "76580998c5b04b82507cf6bec18dd34de2422427fd185e9d801601c442a88226",
+      "entry": 19,
+      "offset": 591680,
+      "table_bytes": 8512
+    },
+    {
+      "character_id": 53,
+      "path": "pzs3us1/01953.bin",
+      "sha256": "aae7bfae3b55556e0a5ae79f744a43a92d2e86916a21fe31294652da147d76c8",
+      "entry": 19,
+      "offset": 590464,
+      "table_bytes": 8512
+    },
+    {
+      "character_id": 54,
+      "path": "pzs3us1/01963.bin",
+      "sha256": "1fd7190eb0d160360b4b67af83fde3a3e7f3859cf59c87e6aa0d74f727a3db52",
+      "entry": 19,
+      "offset": 575552,
+      "table_bytes": 8512
+    },
+    {
+      "character_id": 55,
+      "path": "pzs3us1/01973.bin",
+      "sha256": "3fa933ea61f1016f5352635c61c590733dc929977417be67fec0f227f1b3a467",
+      "entry": 19,
+      "offset": 560832,
+      "table_bytes": 8512
+    },
+    {
+      "character_id": 56,
+      "path": "pzs3us1/01983.bin",
+      "sha256": "ff76c880b297aa451cd2ff70a5e65553c820227302e903acc2473d708044e2dd",
+      "entry": 19,
+      "offset": 559872,
+      "table_bytes": 8512
+    },
+    {
+      "character_id": 57,
+      "path": "pzs3us1/01993.bin",
+      "sha256": "c175168587a0ed23067c1670f91cd61226c9f986b9fce312b54a14d692c62964",
+      "entry": 19,
+      "offset": 603008,
+      "table_bytes": 8512
+    },
+    {
+      "character_id": 58,
+      "path": "pzs3us1/02003.bin",
+      "sha256": "6028def215ab6f8dae4aac4405a500757cf9cf65ea62c14e6e8dec16754d7b6e",
+      "entry": 19,
+      "offset": 588224,
+      "table_bytes": 8512
+    },
+    {
+      "character_id": 59,
+      "path": "pzs3us1/02013.bin",
+      "sha256": "d1ce3f3c9be927d79462daa0b6ee9b1279a843af71dca13d9b7eda57ee897e32",
+      "entry": 19,
+      "offset": 577728,
+      "table_bytes": 8512
+    },
+    {
+      "character_id": 60,
+      "path": "pzs3us1/02023.bin",
+      "sha256": "6093c1a942497e7920155377a6ca416b13e2f46b94efd2ce3a0d3ad6b13c7141",
+      "entry": 19,
+      "offset": 615552,
+      "table_bytes": 8512
+    },
+    {
+      "character_id": 61,
+      "path": "pzs3us1/02033.bin",
+      "sha256": "45949223b4360ff9c45803234fb0eab9987874e33f3602612cef42528a9c1447",
+      "entry": 19,
+      "offset": 557440,
+      "table_bytes": 8512
+    },
+    {
+      "character_id": 62,
+      "path": "pzs3us1/02043.bin",
+      "sha256": "52b32c4b5bf5057623dc8f94ff85de2e84d2bd5ba616bd1594c2da3ba888d876",
+      "entry": 19,
+      "offset": 585472,
+      "table_bytes": 8512
+    },
+    {
+      "character_id": 63,
+      "path": "pzs3us1/02053.bin",
+      "sha256": "bb5e70ecf7f135d18da5676d7acec88b9e82d8d453071bfc02c9932090439603",
+      "entry": 19,
+      "offset": 551232,
+      "table_bytes": 8512
+    },
+    {
+      "character_id": 64,
+      "path": "pzs3us1/02063.bin",
+      "sha256": "29ce3a5f67b952b8d4990cba3891468c413d43b75a914f73158aa29ef5f6b15d",
+      "entry": 19,
+      "offset": 596352,
+      "table_bytes": 8512
+    },
+    {
+      "character_id": 65,
+      "path": "pzs3us1/02073.bin",
+      "sha256": "ea7e8a6debb5a398f7536a4f7d4778db0e57ea8a8cd9c830108b7cd550c92c4a",
+      "entry": 19,
+      "offset": 593408,
+      "table_bytes": 8512
+    },
+    {
+      "character_id": 66,
+      "path": "pzs3us1/02083.bin",
+      "sha256": "393fb1de966bc7f203ad1b160297d08a59823cc991a1466a5bd562e746f85d1d",
+      "entry": 19,
+      "offset": 594432,
+      "table_bytes": 8512
+    },
+    {
+      "character_id": 67,
+      "path": "pzs3us1/02093.bin",
+      "sha256": "f683223416b2a717a6c998d704472c7e9de0a022a558a82d5e64cb79bddf09da",
+      "entry": 19,
+      "offset": 598208,
+      "table_bytes": 8512
+    },
+    {
+      "character_id": 68,
+      "path": "pzs3us1/02103.bin",
+      "sha256": "60261242bbd00db5a9ae4a899d4d233722e2d4465d211baf995b2e99b76d10ca",
+      "entry": 19,
+      "offset": 588416,
+      "table_bytes": 8512
+    },
+    {
+      "character_id": 69,
+      "path": "pzs3us1/02113.bin",
+      "sha256": "0edfa5d20627bf2c5516022f5aaaf2880620fb8d35d4509cb22f226070bd9deb",
+      "entry": 19,
+      "offset": 605632,
+      "table_bytes": 8512
+    },
+    {
+      "character_id": 70,
+      "path": "pzs3us1/02123.bin",
+      "sha256": "e2b8ed93d517d6a903a2dcd8bb0262bc1fb002020819f42331af81372fe01a2d",
+      "entry": 19,
+      "offset": 595392,
+      "table_bytes": 8512
+    },
+    {
+      "character_id": 71,
+      "path": "pzs3us1/02133.bin",
+      "sha256": "ad38c23411852501c464dc557ed5093fa9cd850ddff852c93bdd8bb803d1fb85",
+      "entry": 19,
+      "offset": 687808,
+      "table_bytes": 8512
+    },
+    {
+      "character_id": 72,
+      "path": "pzs3us1/02143.bin",
+      "sha256": "b824523e9663d163cc805e893dcae10d5737103659a0377780153a46dc1d4916",
+      "entry": 19,
+      "offset": 476928,
+      "table_bytes": 8512
+    },
+    {
+      "character_id": 73,
+      "path": "pzs3us1/02153.bin",
+      "sha256": "2d79f78bf4fa902c2c9338c07babe2950d05e2af858e90560bdd63c7960cacf6",
+      "entry": 19,
+      "offset": 637952,
+      "table_bytes": 8512
+    },
+    {
+      "character_id": 74,
+      "path": "pzs3us1/02163.bin",
+      "sha256": "cbafe3a08027ba62a23553c426a6696d2cfa900b37807fb5fe40219897e1f0c8",
+      "entry": 19,
+      "offset": 481920,
+      "table_bytes": 8512
+    },
+    {
+      "character_id": 75,
+      "path": "pzs3us1/02173.bin",
+      "sha256": "adbc3d6fb3de65a10f6471bdd1498da06cf7b3fd57074f3afe605e1e22450c72",
+      "entry": 19,
+      "offset": 638464,
+      "table_bytes": 8512
+    },
+    {
+      "character_id": 76,
+      "path": "pzs3us1/02183.bin",
+      "sha256": "5f5437ebbe0495c1f37217c0702aed22bd26dbe50e633759657d5d526af82f02",
+      "entry": 19,
+      "offset": 483584,
+      "table_bytes": 8512
+    },
+    {
+      "character_id": 77,
+      "path": "pzs3us1/02193.bin",
+      "sha256": "e373305df8c8ebcbab2caf7778c7650e4b2d6e2fbf749c3298f26fcfe76087f3",
+      "entry": 19,
+      "offset": 577728,
+      "table_bytes": 8512
+    },
+    {
+      "character_id": 78,
+      "path": "pzs3us1/02203.bin",
+      "sha256": "99a0bb180ff10332f7295e57846a4d4bd600999af9ea77955cf5cae2d3d77ee3",
+      "entry": 19,
+      "offset": 478208,
+      "table_bytes": 8512
+    },
+    {
+      "character_id": 79,
+      "path": "pzs3us1/02213.bin",
+      "sha256": "e3dc258bdeb001ca7c6f2c46400fa93e39e6dca9243c6afbbff53bf8c3dd39eb",
+      "entry": 19,
+      "offset": 502656,
+      "table_bytes": 8512
+    },
+    {
+      "character_id": 80,
+      "path": "pzs3us1/02223.bin",
+      "sha256": "bcb0c9f6463195abc34fd50ac0f7d9cc9032016f434a3a523cbe5b37176633b2",
+      "entry": 19,
+      "offset": 595520,
+      "table_bytes": 8512
+    },
+    {
+      "character_id": 81,
+      "path": "pzs3us1/02233.bin",
+      "sha256": "f5973051ad0733f863ff5cdc5a72fefeca461363eb16e40b68eaf06d0cd81636",
+      "entry": 19,
+      "offset": 468416,
+      "table_bytes": 8512
+    },
+    {
+      "character_id": 82,
+      "path": "pzs3us1/02243.bin",
+      "sha256": "d54e689e43ab8df78963da01a8601fb84e918b476b1fe0f0a450e7df99f05ffd",
+      "entry": 19,
+      "offset": 591680,
+      "table_bytes": 8512
+    },
+    {
+      "character_id": 83,
+      "path": "pzs3us1/02253.bin",
+      "sha256": "7df2a7946ccbceb4af2439fe81658710ded32dcf4143108c51012827398073c2",
+      "entry": 19,
+      "offset": 613568,
+      "table_bytes": 8512
+    },
+    {
+      "character_id": 84,
+      "path": "pzs3us1/02263.bin",
+      "sha256": "1164c0c57ada2d024b923279f9e8b2afef3a1b4f13197e70a21188749897b244",
+      "entry": 19,
+      "offset": 664640,
+      "table_bytes": 8512
+    },
+    {
+      "character_id": 85,
+      "path": "pzs3us1/02273.bin",
+      "sha256": "68933054c726800b4227759bd56c952f1f2a1f2c171aa364db82587911c02f79",
+      "entry": 19,
+      "offset": 550144,
+      "table_bytes": 8512
+    },
+    {
+      "character_id": 86,
+      "path": "pzs3us1/02283.bin",
+      "sha256": "f0f064a1c2d6f5ab386249b1ab3aa4fb2a3a62baabaf5ee2b5c3ae671e60082a",
+      "entry": 19,
+      "offset": 560320,
+      "table_bytes": 8512
+    },
+    {
+      "character_id": 87,
+      "path": "pzs3us1/02293.bin",
+      "sha256": "c155473aa49699411150ee240f7f87801bb0ac625a1f5e7f1022a60805420764",
+      "entry": 19,
+      "offset": 615104,
+      "table_bytes": 8512
+    },
+    {
+      "character_id": 88,
+      "path": "pzs3us1/02303.bin",
+      "sha256": "7607934dce9cea4bb9efc280c298d1ec0cbf8d21479d9344b15dde14945c53b0",
+      "entry": 19,
+      "offset": 568000,
+      "table_bytes": 8512
+    },
+    {
+      "character_id": 89,
+      "path": "pzs3us1/02313.bin",
+      "sha256": "3eca7c7543913fe1f012220a7d8220b29814759e1d813d51bd8892ecc15fb6b8",
+      "entry": 19,
+      "offset": 573440,
+      "table_bytes": 8512
+    },
+    {
+      "character_id": 90,
+      "path": "pzs3us1/02323.bin",
+      "sha256": "232266ab8f0d225b9463c275cdb2d7f5862f2e0d11aa92c56851d3e7a33632e0",
+      "entry": 19,
+      "offset": 585152,
+      "table_bytes": 8512
+    },
+    {
+      "character_id": 91,
+      "path": "pzs3us1/02333.bin",
+      "sha256": "b3a85f23e4cb1082b32eefc663a970cb852143fef41d9cd36044a3fee87fff42",
+      "entry": 19,
+      "offset": 560064,
+      "table_bytes": 8512
+    },
+    {
+      "character_id": 92,
+      "path": "pzs3us1/02343.bin",
+      "sha256": "ee0e9d6d83d5409f8d14686353ee52564ac159fc16c15698506ba3df02225aaa",
+      "entry": 19,
+      "offset": 548800,
+      "table_bytes": 8512
+    },
+    {
+      "character_id": 93,
+      "path": "pzs3us1/02353.bin",
+      "sha256": "178a7c83dda47b07fc1a86eef0f96d9fb4d680b9b896a3163ed6edac5f688310",
+      "entry": 19,
+      "offset": 566784,
+      "table_bytes": 8512
+    },
+    {
+      "character_id": 94,
+      "path": "pzs3us1/02363.bin",
+      "sha256": "c99b21641d8fca2f7d1af2fb56797666ba6fccf20abba5efc5238d17e41d62ff",
+      "entry": 19,
+      "offset": 569728,
+      "table_bytes": 8512
+    },
+    {
+      "character_id": 95,
+      "path": "pzs3us1/02373.bin",
+      "sha256": "86aa890eb8aef3544b0e66e8e94c1063e014fd516e8f0e9f5f48b405bfef1b84",
+      "entry": 19,
+      "offset": 582976,
+      "table_bytes": 8512
+    },
+    {
+      "character_id": 96,
+      "path": "pzs3us1/02383.bin",
+      "sha256": "9d2c13b785190809ad5c3719ed6ca82b3d42e63d40e5c905ea864347bfc260d5",
+      "entry": 19,
+      "offset": 573760,
+      "table_bytes": 8512
+    },
+    {
+      "character_id": 97,
+      "path": "pzs3us1/02393.bin",
+      "sha256": "74053574e7144e7f55858904e7d3bc989f0f7d1ada1b88c12242d5c453da096f",
+      "entry": 19,
+      "offset": 654912,
+      "table_bytes": 8512
+    },
+    {
+      "character_id": 98,
+      "path": "pzs3us1/02403.bin",
+      "sha256": "450e36578a250e8111fb53d290d600fdb597008e334e0e4a5b86893f4638ed7d",
+      "entry": 19,
+      "offset": 587136,
+      "table_bytes": 8512
+    },
+    {
+      "character_id": 99,
+      "path": "pzs3us1/02413.bin",
+      "sha256": "7dc10b59e52fd0ab180bdbdedc2d9e130854c97aedc2b875146753d2286e4ff3",
+      "entry": 19,
+      "offset": 576384,
+      "table_bytes": 8512
+    },
+    {
+      "character_id": 100,
+      "path": "pzs3us1/02423.bin",
+      "sha256": "a2e97f9039362b80b31e5924056034f2184c88f75725de3bc5c9e16f8c8ae638",
+      "entry": 19,
+      "offset": 597248,
+      "table_bytes": 8512
+    },
+    {
+      "character_id": 101,
+      "path": "pzs3us1/02433.bin",
+      "sha256": "6aa86b90c01222443adad6357cd4c125887d9ee0cad909f01540950b2148b019",
+      "entry": 19,
+      "offset": 551936,
+      "table_bytes": 8512
+    },
+    {
+      "character_id": 102,
+      "path": "pzs3us1/02443.bin",
+      "sha256": "0870f31a187970eefdcec2a017aca3cbf51e10d19cac565f4de8b600a254c2e1",
+      "entry": 19,
+      "offset": 614400,
+      "table_bytes": 8512
+    },
+    {
+      "character_id": 103,
+      "path": "pzs3us1/02453.bin",
+      "sha256": "ed99517c43bbbfeffb55c59b4748cb088e374b530e461564f133d120ac55a42f",
+      "entry": 19,
+      "offset": 544960,
+      "table_bytes": 8512
+    },
+    {
+      "character_id": 104,
+      "path": "pzs3us1/02463.bin",
+      "sha256": "84440d7cc083dedd2bf8d13cbc5f02041c2c617fca8890017909df1807434cf7",
+      "entry": 19,
+      "offset": 598912,
+      "table_bytes": 8512
+    },
+    {
+      "character_id": 105,
+      "path": "pzs3us1/02473.bin",
+      "sha256": "8f3988f1471f1219c8fa66d10d3afdc55f5f5b1e1286bd50c69abbf55dc84837",
+      "entry": 19,
+      "offset": 594304,
+      "table_bytes": 8512
+    },
+    {
+      "character_id": 106,
+      "path": "pzs3us1/02483.bin",
+      "sha256": "ab00657adee37e5b49097a734eed47d29459b25bc73d15da56279f2693f0db9e",
+      "entry": 19,
+      "offset": 613696,
+      "table_bytes": 8512
+    },
+    {
+      "character_id": 107,
+      "path": "pzs3us1/02493.bin",
+      "sha256": "c8c0ce81c14fdf24a3a78c2a8ccc296ab84bde058208a13043861c79a95f7ba3",
+      "entry": 19,
+      "offset": 540096,
+      "table_bytes": 8512
+    },
+    {
+      "character_id": 108,
+      "path": "pzs3us1/02503.bin",
+      "sha256": "04db667e2e24f6a50d9016d48426673aa3320c56ba2af59ada28cec30629c1d6",
+      "entry": 19,
+      "offset": 540096,
+      "table_bytes": 8512
+    },
+    {
+      "character_id": 109,
+      "path": "pzs3us1/02513.bin",
+      "sha256": "9ecf0d45a4589c1f7715383e21b02bf534c2cb7e29afb55debb379361a7553a1",
+      "entry": 19,
+      "offset": 550784,
+      "table_bytes": 8512
+    },
+    {
+      "character_id": 110,
+      "path": "pzs3us1/02523.bin",
+      "sha256": "2ba6d9de83fa43d001040b926bcf04df2df87445ac444dd9b523eebab120dae4",
+      "entry": 19,
+      "offset": 614784,
+      "table_bytes": 8512
+    },
+    {
+      "character_id": 111,
+      "path": "pzs3us1/02533.bin",
+      "sha256": "b6e844c36009aaf89e8e80c109d584691fd22df42acaaa17502155ba500e23b1",
+      "entry": 19,
+      "offset": 615680,
+      "table_bytes": 8512
+    },
+    {
+      "character_id": 112,
+      "path": "pzs3us1/02543.bin",
+      "sha256": "47ff9a705c357888a377549a262ecb2effa6c2275ff3515309ecdd1a14131a0f",
+      "entry": 19,
+      "offset": 540928,
+      "table_bytes": 8512
+    },
+    {
+      "character_id": 113,
+      "path": "pzs3us1/02553.bin",
+      "sha256": "ce016b4fcc2c788f9ad5f45759867d06e4439c9c0428ddd33c1183b788cd874e",
+      "entry": 19,
+      "offset": 597184,
+      "table_bytes": 8512
+    },
+    {
+      "character_id": 114,
+      "path": "pzs3us1/02563.bin",
+      "sha256": "63e2f40745c9f66ecb56090869bec6b3b1d5a355f4f4fb2a89f07f9cae13be37",
+      "entry": 19,
+      "offset": 583488,
+      "table_bytes": 8512
+    },
+    {
+      "character_id": 115,
+      "path": "pzs3us1/02573.bin",
+      "sha256": "8d7538cb3746c9591fa3dd7e87314a0111108e7bf067d7dcb068e01ca228b339",
+      "entry": 19,
+      "offset": 592064,
+      "table_bytes": 8512
+    },
+    {
+      "character_id": 116,
+      "path": "pzs3us1/02583.bin",
+      "sha256": "d1c5e3d9cefb022f245ef240c7d2d36f7c65161d4bdd16c9256113469901db2c",
+      "entry": 19,
+      "offset": 595328,
+      "table_bytes": 8512
+    },
+    {
+      "character_id": 117,
+      "path": "pzs3us1/02593.bin",
+      "sha256": "34fd0e66073c0ece18aa45425e92aa3e39939ce88f62376ad87133efa4e0ffab",
+      "entry": 19,
+      "offset": 600512,
+      "table_bytes": 8512
+    },
+    {
+      "character_id": 118,
+      "path": "pzs3us1/02603.bin",
+      "sha256": "4f6fcc34eb91dcdfa449faa7dbc0041e507ff282e988c3414b10384c7435728d",
+      "entry": 19,
+      "offset": 585408,
+      "table_bytes": 8512
+    },
+    {
+      "character_id": 119,
+      "path": "pzs3us1/02613.bin",
+      "sha256": "03492868db62ac266af830d156692488f8f98757d7342e1d18744c90effc5333",
+      "entry": 19,
+      "offset": 592960,
+      "table_bytes": 8512
+    },
+    {
+      "character_id": 120,
+      "path": "pzs3us1/02623.bin",
+      "sha256": "d5837f8d4106e76dfcdbfc20236e5179d01b94ae8ae7010d149b541e2e8c3535",
+      "entry": 19,
+      "offset": 510464,
+      "table_bytes": 8512
+    },
+    {
+      "character_id": 121,
+      "path": "pzs3us1/02633.bin",
+      "sha256": "7da9d512024cec29898fa2451b76e477952f50f02eeafca7d083a642edf4924a",
+      "entry": 19,
+      "offset": 612224,
+      "table_bytes": 8512
+    },
+    {
+      "character_id": 122,
+      "path": "pzs3us1/02643.bin",
+      "sha256": "003de9fa21a40b95a8c0c697e868d07bcee6eecaf1f08304b8b557f3170ba52f",
+      "entry": 19,
+      "offset": 466304,
+      "table_bytes": 8512
+    },
+    {
+      "character_id": 123,
+      "path": "pzs3us1/02653.bin",
+      "sha256": "284ee646e158be5e7343390d9c9c5395e684045aee4fbd694d205eb36353405b",
+      "entry": 19,
+      "offset": 584128,
+      "table_bytes": 8512
+    },
+    {
+      "character_id": 124,
+      "path": "pzs3us1/02663.bin",
+      "sha256": "f4c36195f509607408a1fe26aea67551ba76d0ed32a46fedcc20ba179eff756a",
+      "entry": 19,
+      "offset": 652672,
+      "table_bytes": 8512
+    },
+    {
+      "character_id": 125,
+      "path": "pzs3us1/02673.bin",
+      "sha256": "d547c9c674e7e33a733d6f302f8b17cea51712bcd01ab9dcbc1281ef9c9b3c2e",
+      "entry": 19,
+      "offset": 546880,
+      "table_bytes": 8512
+    },
+    {
+      "character_id": 126,
+      "path": "pzs3us1/02683.bin",
+      "sha256": "225977732f9bd733d77b9a446495c7e8e49b53bcd7107501ee2701486c153ae2",
+      "entry": 19,
+      "offset": 540992,
+      "table_bytes": 8512
+    },
+    {
+      "character_id": 127,
+      "path": "pzs3us1/02693.bin",
+      "sha256": "299b77927e54f00b2ef9c3e93bd22f2d9c1f24b190498434977ae48cdd351d8d",
+      "entry": 19,
+      "offset": 536640,
+      "table_bytes": 8512
+    },
+    {
+      "character_id": 128,
+      "path": "pzs3us1/02703.bin",
+      "sha256": "5518d6381eaf8eecc51050d41145e3b1b38f53a816418894a279b8a91626469b",
+      "entry": 19,
+      "offset": 563008,
+      "table_bytes": 8512
+    },
+    {
+      "character_id": 129,
+      "path": "pzs3us1/02713.bin",
+      "sha256": "826f8cdc2913453a2080e14cf19110f007214931336f90a4f256203d5213afca",
+      "entry": 19,
+      "offset": 602752,
+      "table_bytes": 8512
+    },
+    {
+      "character_id": 130,
+      "path": "pzs3us1/02723.bin",
+      "sha256": "d99990220b921818f8b392abca8eef5e24baa8bcd3097f6875d36246c2f773a5",
+      "entry": 19,
+      "offset": 587904,
+      "table_bytes": 8512
+    },
+    {
+      "character_id": 131,
+      "path": "pzs3us1/02733.bin",
+      "sha256": "0405a9f1ee7ba942477ce1084b79331a61e4134c83f2f20ddc3dc3c673680517",
+      "entry": 19,
+      "offset": 556160,
+      "table_bytes": 8512
+    },
+    {
+      "character_id": 132,
+      "path": "pzs3us1/02743.bin",
+      "sha256": "fe8446e9cdbf4327e85e395031c0f59874a112e59260a862dee72f884a42414d",
+      "entry": 19,
+      "offset": 604800,
+      "table_bytes": 8512
+    },
+    {
+      "character_id": 133,
+      "path": "pzs3us1/02753.bin",
+      "sha256": "73cf5909eeaa6ecf32616e86fb0a5e066f3260320a56b3b11e2fa7fadb1584a0",
+      "entry": 19,
+      "offset": 607552,
+      "table_bytes": 8512
+    },
+    {
+      "character_id": 134,
+      "path": "pzs3us1/02763.bin",
+      "sha256": "6c2a2ad6799a828ed05fe1509e9f87b207369e3b68a7c3b3ccb1d3b63ef86ab6",
+      "entry": 19,
+      "offset": 602560,
+      "table_bytes": 8512
+    },
+    {
+      "character_id": 135,
+      "path": "pzs3us1/02773.bin",
+      "sha256": "05a38694ef703ad7a0621b808326f744786919641bf32a3ab88e6fb50fcab076",
+      "entry": 19,
+      "offset": 610624,
+      "table_bytes": 8512
+    },
+    {
+      "character_id": 136,
+      "path": "pzs3us1/02783.bin",
+      "sha256": "7b132e20cee1d7867d108c98bd896f3a72b446b0825ce8ce5e391af338a719b9",
+      "entry": 19,
+      "offset": 586880,
+      "table_bytes": 8512
+    },
+    {
+      "character_id": 137,
+      "path": "pzs3us1/02793.bin",
+      "sha256": "fb2eb30b3874951657688ce98b22d5dc167089c9361f0d780275b6cd024e9db0",
+      "entry": 19,
+      "offset": 547968,
+      "table_bytes": 8512
+    },
+    {
+      "character_id": 138,
+      "path": "pzs3us1/02803.bin",
+      "sha256": "86d2a18d8c4cc56dc4f4e42acc7db58d778c40307dd8099a8d1c20aba72eb6aa",
+      "entry": 19,
+      "offset": 602112,
+      "table_bytes": 8512
+    },
+    {
+      "character_id": 139,
+      "path": "pzs3us1/02813.bin",
+      "sha256": "388efef7b69a59dfb957537a7507cb4a861b47e86d77e9a291e8142bfb86d0fe",
+      "entry": 19,
+      "offset": 582976,
+      "table_bytes": 8512
+    },
+    {
+      "character_id": 140,
+      "path": "pzs3us1/02823.bin",
+      "sha256": "73f5053b021f32fef4631a2bf8032b2a6ec042279a8d6aa10eb10c8d3b152155",
+      "entry": 19,
+      "offset": 547008,
+      "table_bytes": 8512
+    },
+    {
+      "character_id": 141,
+      "path": "pzs3us1/02833.bin",
+      "sha256": "a5ce5cf4e6164ddbf07cb6ae064771402b36f06070637d2a97e858d707deb6c9",
+      "entry": 19,
+      "offset": 580224,
+      "table_bytes": 8512
+    },
+    {
+      "character_id": 142,
+      "path": "pzs3us1/02843.bin",
+      "sha256": "41e28143f9f9984c7267521a0fd2c7116a83569a51a97b1b4e965cd01c4c03fe",
+      "entry": 19,
+      "offset": 566976,
+      "table_bytes": 8512
+    },
+    {
+      "character_id": 143,
+      "path": "pzs3us1/02853.bin",
+      "sha256": "6647b0728a62b9b2da37b98c90a9d42d1159be176710144135fe84287d101227",
+      "entry": 19,
+      "offset": 478208,
+      "table_bytes": 8512
+    },
+    {
+      "character_id": 144,
+      "path": "pzs3us1/02863.bin",
+      "sha256": "56b401d8723be68f2d66aefc21bde101bdc50990bce4b2034ae9d84657417b7f",
+      "entry": 19,
+      "offset": 580160,
+      "table_bytes": 8512
+    },
+    {
+      "character_id": 145,
+      "path": "pzs3us1/02873.bin",
+      "sha256": "b40b4f6e22dbc417ff6f5d407511f85bc818457c885667c380cabba2c0c734eb",
+      "entry": 19,
+      "offset": 587264,
+      "table_bytes": 8512
+    },
+    {
+      "character_id": 146,
+      "path": "pzs3us1/02883.bin",
+      "sha256": "afde092c9a255a8503e29f677f0e31aa3e92f6eb583d96adb0c7b3f6d8eb0558",
+      "entry": 19,
+      "offset": 655744,
+      "table_bytes": 8512
+    },
+    {
+      "character_id": 147,
+      "path": "pzs3us1/02893.bin",
+      "sha256": "74873aad2736e283f6854f3f8504c1a63d3d5774170d732d9462dc0e548049de",
+      "entry": 19,
+      "offset": 634112,
+      "table_bytes": 8512
+    },
+    {
+      "character_id": 148,
+      "path": "pzs3us1/02903.bin",
+      "sha256": "0d2e81207c9b2467a80c5d69da682d005766fb1aa594bedad4628aa2edee2ad3",
+      "entry": 19,
+      "offset": 591360,
+      "table_bytes": 8512
+    },
+    {
+      "character_id": 149,
+      "path": "pzs3us1/02913.bin",
+      "sha256": "4f28e5b8ff63a46d9241b6c4b1dac6ccf5ae746af286a48af905a9e4deacc646",
+      "entry": 19,
+      "offset": 594880,
+      "table_bytes": 8512
+    },
+    {
+      "character_id": 150,
+      "path": "pzs3us1/02923.bin",
+      "sha256": "0cf5e85f54ad0b0af0c8a6bfcc5c0c70f6f45811065185508e7eda1676624acb",
+      "entry": 19,
+      "offset": 690176,
+      "table_bytes": 8512
+    },
+    {
+      "character_id": 151,
+      "path": "pzs3us1/02933.bin",
+      "sha256": "28fa4052cdf382df8a15d2c11a0d7fb40c60f5de939652ca54d84e0317aad627",
+      "entry": 19,
+      "offset": 659712,
+      "table_bytes": 8512
+    },
+    {
+      "character_id": 152,
+      "path": "pzs3us1/02943.bin",
+      "sha256": "605d18e6a3ed85940be54e328aed229aeea053f1655f2932750743f78bc04e70",
+      "entry": 19,
+      "offset": 440960,
+      "table_bytes": 8512
+    },
+    {
+      "character_id": 153,
+      "path": "pzs3us1/02953.bin",
+      "sha256": "21822aa7f13aeb5781b00073a4c8426b8472436d5babbf762adc7c6c772fb1e5",
+      "entry": 19,
+      "offset": 708736,
+      "table_bytes": 8512
+    },
+    {
+      "character_id": 154,
+      "path": "pzs3us1/02963.bin",
+      "sha256": "2f1ec270933f0fb7baba78645ec624a53ef0a6702cbb5e82e3578cb71712fd8d",
+      "entry": 19,
+      "offset": 693120,
+      "table_bytes": 8512
+    },
+    {
+      "character_id": 155,
+      "path": "pzs3us1/02973.bin",
+      "sha256": "9e791ad75241e85c4efbea9f54ba92e4573fe0e7beabbf338e4257e47c1e45c6",
+      "entry": 19,
+      "offset": 683584,
+      "table_bytes": 8512
+    },
+    {
+      "character_id": 156,
+      "path": "pzs3us1/02983.bin",
+      "sha256": "41066fea1d714540f7aa3e10b79484d8b7f17c2521e7207ca69c1db95107995c",
+      "entry": 19,
+      "offset": 682560,
+      "table_bytes": 8512
+    },
+    {
+      "character_id": 157,
+      "path": "pzs3us1/02993.bin",
+      "sha256": "64bb33b3a9a133a85beaedcb8eeb32d12c3f6bc2a09173ba76d7b590728a009d",
+      "entry": 19,
+      "offset": 681472,
+      "table_bytes": 8512
+    },
+    {
+      "character_id": 158,
+      "path": "pzs3us1/03003.bin",
+      "sha256": "34ce2f4cd07c55839377a919b3efe40f749775aa42ce3eb768b20565700b6774",
+      "entry": 19,
+      "offset": 586752,
+      "table_bytes": 8512
+    },
+    {
+      "character_id": 159,
+      "path": "pzs3us1/03013.bin",
+      "sha256": "216024ef02439687d9188fd046b7073c8fea36627f73da0472fd5ce9da40920f",
+      "entry": 19,
+      "offset": 612288,
+      "table_bytes": 8512
+    },
+    {
+      "character_id": 160,
+      "path": "pzs3us1/03023.bin",
+      "sha256": "1de9299b70cb6d5b35f72827fb2b251932a98dc37a9146438cae28fe1b12934d",
+      "entry": 19,
+      "offset": 659392,
+      "table_bytes": 8512
+    }
+  ],
+  "catalog_sha256": "bf2ad97c8db513c4c411c1af151e99fc5559e3726e93b229168c7f6693025e25",
+  "sqlite_sha256": "4301b957c17e61236f0743a827abae6569942371eeae899006427b1b0f698d2b",
+  "c3_header_sha256": "8f765d922071cbe3e6fce324ffdacb7b6bcd3aad6a74ae028fc964a9098ed174"
+}

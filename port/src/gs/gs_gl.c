@@ -812,7 +812,11 @@ static void frame_end(void) {
         if (PortInput_Hotkey(&ev)) { Ui_Toggle(); continue; }
         if (Ui_Event(&ev)) { continue; }
         if (ev.type == SDL_EVENT_KEY_DOWN && ev.key.key == SDLK_ESCAPE) { if (!ev.key.repeat && !Ui_QuitAsk()) { exit(0); } /* (asks first) */ }
-        if (ev.type == SDL_EVENT_KEY_DOWN && !ev.key.repeat && ev.key.scancode == ude_key()) {
+        if (ev.type == SDL_EVENT_KEY_DOWN && !ev.key.repeat && ev.key.scancode == SDL_SCANCODE_F6) {
+            extern void PortUdeDb_RequestToggle(void);
+            PortUdeDb_RequestToggle();
+        }
+        else if (ev.type == SDL_EVENT_KEY_DOWN && !ev.key.repeat && ev.key.scancode == ude_key()) {
             extern void PortUde_RequestToggle(void); /* port/src/ude_game.c: defense assist on / off */
             PortUde_RequestToggle();
         }

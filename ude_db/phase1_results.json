@@ -1,0 +1,39 @@
+{
+  "phase": 1,
+  "techniques": 21,
+  "windows": 7,
+  "field_status_counts": {
+    "ok": 217,
+    "não encontrado": 92,
+    "divergente": 52
+  },
+  "csv_cells_compared": 273,
+  "csv_cells_same_text": 273,
+  "attack_extraction": {
+    "records": 26243,
+    "characters": 161,
+    "records_per_character": 163,
+    "record_size": 48,
+    "catalog_fields_compared": 36,
+    "source_files_matched": 155,
+    "pack_files_matched": 161,
+    "c3_sqlite_records_matched": 26243,
+    "c3_header_records_matched": 26243,
+    "flag_counts": {
+      "0x1": 18998,
+      "0x4000000": 644,
+      "0x100000": 1449,
+      "0x800000": 483,
+      "0x1000000": 483
+    },
+    "catalog_sha256": "bf2ad97c8db513c4c411c1af151e99fc5559e3726e93b229168c7f6693025e25",
+    "sqlite_sha256": "4301b957c17e61236f0743a827abae6569942371eeae899006427b1b0f698d2b",
+    "c3_header_sha256": "8f765d922071cbe3e6fce324ffdacb7b6bcd3aad6a74ae028fc964a9098ed174"
+  },
+  "protected_c3_files_unchanged": 77,
+  "integration_tests_run": 0,
+  "manual_tests_run": 0,
+  "runtime_success_rate": null,
+  "engine_implemented": false,
+  "homologated": false
+}

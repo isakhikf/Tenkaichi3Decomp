@@ -2,7 +2,8 @@
 *.rvz
 /disc/
 /wii/
-/tools/
+/tools/*
+!/tools/defense_db/
 /.venv/
 /build/
 /asm/
@@ -42,3 +43,8 @@ bt3_mods.txt
 
 # the private key that signs the releases for the automatic update (port/tools/update_key.py generate): never in the repository
 port/tools/update_signing_key.txt
+
+# UDE-DB1 generated local database and optional diagnostic logs.
+/bt3_combat_database.sqlite
+/ude_db_log.jsonl
+/port/tests/ude_db/results/
