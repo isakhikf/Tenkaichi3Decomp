@@ -41,9 +41,9 @@ O índice da tabela de ataques é o character ID obtido do objeto oponente por `
 
 | Checagem | Resultado local |
 |---|---:|
-| Política e arbitragem | 84 testes, zero falhas |
+| Política e arbitragem | 89 testes, zero falhas |
 | Adaptador / fronteira de leituras | 14 testes, zero falhas |
-| Funções C nativas e registros | 472.468 verificações, zero falhas |
+| Funções C nativas e registros | 472.480 verificações, zero falhas |
 | Temporização com função nativa | 3.000 updates, 84 toques, zero resets anti-mash causados por eles |
 | Campanha de segurança sintética | 20.000 updates; zero sobrescritas físicas e zero intervalos de pressão menores que 30 |
 | Replay DB1 de fixture sintética | 120/120 decisões e razões reproduzidas; intervalo mínimo 30 |
@@ -69,3 +69,5 @@ python port/tests/ude_db/replay_logs.py --c3-dir CAMINHO/diagnosticos-defesa
 No Windows usado nesta sessão, as duas últimas chamadas receberam `--zig C:/Users/isakhi_/Documents/Codex/2026-10-23/cr/work/bt3-v3/compiler/zig-windows-x86_64-0.13.0/zig.exe`. O CI usa gcc e o workflow existente `ude-build.yml`, seguido de `port/release/inside.sh` para o Windows x64. O SQLite é gerado localmente e não precisa existir no jogo durante a luta.
 
 O roteiro físico e as 210 linhas de registro estão em `TESTE-MANUAL.md` e `tentativas-manuais.csv`. Nada está homologado.
+
+Ver também `CORRECAO-1.md`: após reprodução em jogo, uma receita temporizada elegível reserva a borda enquanto aguarda o contato. A guarda inferior não abre a janela antes da hora.

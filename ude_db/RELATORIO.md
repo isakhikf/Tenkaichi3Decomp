@@ -8,14 +8,14 @@ Data: 2026-11-09. Branch separada: `ude-db1`. Base oficial: 0.1.39.6 (`48d66c1`)
 | Gerador | JSON → header/SQLite; check de drift passou; 30 tabelas prévias preservadas integralmente. |
 | Política | Implementada, escalar, sem alocação ou headers do jogo; toggle próprio e default desligado. |
 | Testes automatizados | Passaram; números abaixo. |
-| Windows x64 | **Build e verificações passaram** no run 42592500592; hashes em `BUILD.json`. |
+| Windows x64 | **Build e verificações passaram** no run 42669251257; hashes em `BUILD.json`. |
 | Controle físico / eficácia C3 × DB1 | Pendente do roteiro do usuário e de novos logs completos. Não homologado. |
 
 | Verificação | Resultado |
 |---|---:|
-| Casos de política e arbitragem | 84, zero falhas |
+| Casos de política e arbitragem | 89, zero falhas |
 | Casos do adaptador | 14, zero falhas |
-| Verificações contra funções C nativas e tabelas | 472.468, zero falhas |
+| Verificações contra funções C nativas e tabelas | 472.480, zero falhas |
 | Temporização pela função nativa | 3.000 updates; 84 toques; zero resets anti-mash causados por eles |
 | Segurança aleatória | 20.000 updates; zero sobrescritas físicas e zero intervalos de pressão menores que 30 |
 | Replay de fixture DB1 | 120/120 decisões e razões; intervalo mínimo 30 |
@@ -36,4 +36,6 @@ A flag 0x7B não é exposta pelo leitor legado de resultados. Não foi acrescent
 
 Os comandos executados e as evidências por arquivo estão em `IMPLEMENTACAO.md`, `AUDIT.md`, `CHANGELOG.md` e `resultados/`. O build usa o workflow existente `ude-build.yml` e o processo oficial `port/release/inside.sh`. Os executáveis antigos, os logs e as branches `ude-integration`, `ude-v4` e `ude-hybrid-v5` foram preservados.
 
-Build verificado: [ude-build 42592500592](https://github.com/isakhikf/Tenkaichi3Decomp/actions/runs/42592500592), commit `96cac4b26f6c9bf11d52b9517629b121e32c5cb1`.
+Build verificado: [ude-build 42669251257](https://github.com/isakhikf/Tenkaichi3Decomp/actions/runs/42669251257), commit `b6a8c5107711b4d827a6b8003b37d0b785880b3c`.
+
+Ver também `CORRECAO-1.md`: após reprodução em jogo, uma receita temporizada elegível reserva a borda enquanto aguarda o contato. A guarda inferior não abre a janela antes da hora.
